@@ -1,0 +1,91 @@
+.container {
+  min-height: 100vh;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.header {
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  padding: var(--spacing-4) var(--spacing-6);
+}
+
+.headerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  background: none;
+  border: none;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+
+.backButton:hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.backIcon {
+  width: 16px;
+  height: 16px;
+}
+
+.navigation {
+  display: flex;
+  gap: var(--spacing-1);
+}
+
+.navTab {
+  padding: var(--spacing-2) var(--spacing-4);
+  background: none;
+  border: none;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+
+.navTab:hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.navTabActive {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.navTabActive:hover {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.classCode {
+  padding: var(--spacing-2) var(--spacing-4);
+  background: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+  font-family: monospace;
+}
+
+.main {
+  padding: var(--spacing-6);
+  max-width: 1200px;
+  margin: 0 auto;
+}

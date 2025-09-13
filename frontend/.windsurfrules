@@ -1,0 +1,25 @@
+#General Programming
+- Use cammel case 
+
+#styling 
+- use global styles as the source for all color styles 
+- use css modules for component styling 
+
+#components 
+-create distinct components whenever possible to maximize readability 
+
+#general site structure: 
+
+/teacher : teacher dashboard
+
+/student : student dashboard
+
+#file structure: 
+- write all component code under the /components folder
+- write all api access code under the /lib folder. api calls should be functions exported from a file within /lib 
+
+#api calls: 
+if a api call is not specified, create a placeholder function with default values
+
+#documentation: 
+- in addition to other documentation, include a docstring at the top of each component briefly explaining where it is used. 

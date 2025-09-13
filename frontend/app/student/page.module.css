@@ -1,0 +1,14 @@
+.container {
+  min-height: 100vh;
+  background-color: hsl(var(--background));
+}
+
+.main {
+  padding: 0;
+  height: calc(100vh - 80px);
+}
+
+.layout {
+  display: flex;
+  height: 100%;
+}
