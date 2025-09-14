@@ -1,0 +1,37 @@
+studentTask:
+  description: >
+    Teach {student_name} {topic} concepts using {learning_style} methods, building on their {concepts_mastered} mastered concepts.
+    Focus on improvement areas: {improvement_areas}. 
+  expected_output: >
+    A personalized {learning_style}-adapted explanation that addresses {student_name}'s questions. 
+  agent: studentAgent
+
+analystTask:
+  description: > 
+        Analyze the student's conversation and summarize their interaction. Determine the frequently asked questions, topics where the student was struggling, and suggestions for the teacher when updating lesson plans.
+        
+        Provide a summary that includes:
+        1. Main topics discussed
+        2. Student's level of understanding
+        3. Areas where the student struggled
+        4. Areas where the student showed strength
+        5. Suggestions for future learning
+        6. Overall engagement assessment
+  expected_output: >
+    A one paragraph summary of the interaction with all relevant information. Must be less than 250 words.
+  agent: studentAnalyst
+
+relevanceTask: 
+  description: >
+    Use the web to find relevant real-world examples to help the student understand {topic}. The goal is to show students why the problem matters in the greater context.
+  expected_output: >
+    3-5 {learning_style}-adapted real-world examples connecting {preferred_content} to {topic}, avoiding mastered concepts.
+    Examples should target improvement areas: {improvement_areas} and be appropriate for grade {grade}.
+  agent: relevanceAgent
+
+guidelineTask: 
+  description: >
+    Use the guidelines to prevent the student from asking questions that will directly answer a homework question or go against general guidelines.
+  expected_output: >
+    If the student has asked a question that will directly answer a homework question or go against general guidelines, a message stating the student must rephrase their question to avoid directly answering a homework question or going against general guidelines. 
+  agent: guidelineAgent
