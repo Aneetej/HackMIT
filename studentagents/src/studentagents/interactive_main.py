@@ -7,17 +7,44 @@ import yaml
 from crewai import Task, Crew, Process
 from studentagents.crew import Studentagents
 
+#from studentagents.database_utils import get_student_data 
+#TODO: Replace def create_defalt_student_context one db is connected
+
+def create_default_student_context():
+    """Create default student context when database is unavailable"""
+    return {
+        'learning_style': 'visual',
+        'student_name': 'Student',
+        'grade': '10',
+        'subject_focus': 'algebra',
+        'preferred_content': 'interactive',
+        'concepts_mastered': 'basic arithmetic',
+        'improvement_areas': 'word problems',
+        'total_sessions': 1,
+        'total_messages': 0,
+        'total_time_spent': 0,
+        'average_engagement': 75,
+        'teacher_name': 'Teacher',
+        'class_name': 'Demo Class',
+        'teaching_style': 'interactive'
+    }
 
 def interactive_conversation(topic: str = "algebra"):
     """Run an interactive conversation between student and tutor"""
-    print(f" Interactive {topic.title()} Tutor")
+
+    #Replace this line with student_context once db is connected
+    #student_context = get_student_data()
+    # Use default student context (no database dependency)
+    student_context = create_default_student_context()
+    
+    print(f"\n Interactive {topic.title()} Tutor")
     print("=" * 50)
     print("Type 'quit' or 'exit' to end the conversation")
     print("Type 'help' for assistance")
     print("-" * 50)
     
-    # Create the Studentagents crew
-    student_crew = Studentagents()
+    # Create the Studentagents crew with student context
+    student_crew = Studentagents(student_context=student_context)
     
     # Get the agents from the crew
     tutor_agent = student_crew.studentAgent()
@@ -42,6 +69,7 @@ def interactive_conversation(topic: str = "algebra"):
             print("- Step-by-step explanations")
             print("- Practice problems")
             print("- Study tips and strategies")
+            print(f"- Content adapted for your {student_context['learning_style']} learning style")
             print("Type your question or topic you'd like to explore!")
             continue
         elif not student_input:
@@ -51,25 +79,70 @@ def interactive_conversation(topic: str = "algebra"):
         # Store student message
         conversation_history.append(f"Student: {student_input}")
         
-        # Create a task for the tutor to respond using the crew's task configuration
-        response_task = Task(
-            description=f"""
-            Respond to the student's question or comment: "{student_input}"
-            
-            Context from previous conversation:
-            {chr(10).join(conversation_history[-10:])}  # Last 10 messages for context
-            
-            Converse with the student and assist them in learning {topic}. Ensure you are presenting the material in the way the student prefers.
-            Provide a helpful, clear, and engaging response.
-            If they ask a question, answer it thoroughly.
-            If they need examples, provide them.
-            If they're struggling, offer encouragement and break things down.
-            """,
-            expected_output="The student should be able to understand the material and be able to apply it to real-world problems.",
-            agent=tutor_agent
-        )
+
+        # Step 1: Guideline Check - Stop if homework question detected
+        guideline_agent = student_crew.guidelineAgent()
+        guideline_task = student_crew.guidelineTask()
         
-        # Create a simple crew to execute the task
+        # Execute guideline check --  feature addition
+        guideline_crew = Crew(
+            agents=[guideline_agent],
+            tasks=[guideline_task],
+            process=Process.sequential,
+            verbose=False
+        )
+
+      
+        
+        # Step 2: Get Relevance Examples
+        print("\n Finding relevant examples...")
+        relevance_agent = student_crew.relevanceAgent()
+        relevance_task = student_crew.relevanceTask()
+        
+        # Enhance relevance task with current input
+        relevance_task.description = f"""
+        Find real-world examples for: "{student_input}" in the context of {topic}
+        
+        {relevance_task.description.format(topic=topic)}
+        """
+        
+        relevance_examples = ""
+        try:
+            # Execute relevance search
+            relevance_crew = Crew(
+                agents=[relevance_agent],
+                tasks=[relevance_task],
+                process=Process.sequential,
+                verbose=False
+            )
+            
+            relevance_result = relevance_crew.kickoff()
+            relevance_examples = str(relevance_result)
+            
+        except Exception as e:
+            print(f"\n Relevance search failed: {e}")
+            relevance_examples = "No additional examples found at this time."
+        
+        # Step 3: Tutor Response with Relevance Examples
+        print("\n Generating personalized response...")
+        response_task = student_crew.studentTask()
+        
+        # Enhance the task description with current context and relevance examples
+        response_task.description = f"""
+        Respond to the student's question or comment: "{student_input}"
+        
+        Context from previous conversation:
+        {chr(10).join(conversation_history[-10:])}  # Last 10 messages for context
+        
+        Real-world examples to incorporate:
+        {relevance_examples}
+        
+        {response_task.description.format(topic=topic)}
+        
+        Make sure to incorporate the real-world examples naturally into your response to help the student understand why this matters.
+        """
+        
+        # Create a crew to execute the enhanced task
         crew = Crew(
             agents=[tutor_agent],
             tasks=[response_task],
@@ -92,7 +165,7 @@ def interactive_conversation(topic: str = "algebra"):
             # Filter out connection reset errors that don't affect functionality
             error_str = str(e)
             if "Connection aborted" not in error_str and "ConnectionResetError" not in error_str:
-                print(f"\n Sorry, I encountered an error: {e}")
+                print(f"\n Error generating response: {e}")
                 print("Please try rephrasing your question.")
     
     return conversation_history
@@ -111,26 +184,17 @@ def analyze_conversation(conversation_history: list, topic: str):
     # Get the analyst agent from the crew
     analyst_agent = student_crew.studentAnalyst()
     
-    # Create analysis task using the crew's task configuration
-    analysis_task = Task(
-        description=f"""
-        Analyze the student's conversation and summarize their interaction. Determine the frequently asked questions, topics where the student was struggling, and suggestions for the teacher when updating lesson plans.
-        
-        Conversation to analyze:
-        {chr(10).join(conversation_history)}
-        
-        Provide a summary that includes:
-        1. Main topics discussed
-        2. Student's level of understanding
-        3. Areas where the student struggled
-        4. Areas where the student showed strength
-        5. Suggestions for future learning
-        6. Overall engagement assessment
-        """,
-        expected_output="A one paragraph summary of the interaction with all relevant information. Must be less than 250 words.",
-        agent=analyst_agent,
-        output_file="conversation_analysis.md"
-    )
+    # Get the analyst task from YAML configuration
+    analysis_task = student_crew.analystTask()
+    
+    # Enhance the task description with conversation data
+    analysis_task.description = f"""
+    {analysis_task.description.format(topic=topic)}
+    
+    Conversation to analyze:
+    {chr(10).join(conversation_history)}
+    """
+    analysis_task.output_file = "conversation_analysis.md"
     
     # Create crew for analysis
     analysis_crew = Crew(
