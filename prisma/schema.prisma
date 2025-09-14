@@ -42,6 +42,22 @@ model Student {
   @@map("students")
 }
 
+model Class {
+  id             String        @id @db.Char(6)   // 6-digit numeric string
+  name           String
+  restrictions   String?
+  teachingStyle  String?
+
+  // Relationships
+  students       Student[]     @relation("ClassStudents")
+  teacher        Teacher?      @relation(fields: [teacherId], references: [id])
+  teacherId      String?
+  chatSessions   ChatSession[]
+
+  @@map("classes")
+}
+
+
 model Teacher {
   id         String   @id @default(cuid())
   name       String
