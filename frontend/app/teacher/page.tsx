@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Navigation from '../../components/Navigation';
 import ClassCard from '../../components/ClassCard';
 import AddClassCard from '../../components/AddClassCard';
 import styles from './page.module.css';
@@ -46,11 +45,6 @@ export default function TeacherDashboard() {
 
   return (
     <div className={styles.dashboard}>
-      <Navigation 
-        userRole="teacher" 
-        userName="Dr. Sarah Johnson" 
-      />
-      
       <main className={styles.container}>
       
 

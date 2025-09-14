@@ -36,9 +36,11 @@ export default function Home() {
             learning_style: 'mixed'
           });
           
-          // Store student ID for future use
-          localStorage.setItem('studentId', response.studentId);
-          localStorage.setItem('userType', 'student');
+          // Store user data in unified format
+          localStorage.setItem('user', JSON.stringify({
+            userType: 'student',
+            userId: response.studentId
+          }));
           router.push('/student');
         } else {
           const response = await authApi.registerTeacher({
@@ -46,27 +48,37 @@ export default function Home() {
             name,
             subject
           });
-          
-          // Store teacher ID for future use
-          localStorage.setItem('teacherId', response.teacherId);
-          localStorage.setItem('userType', 'teacher');
-          router.push('/teacher');
+          if (response.success) {
+            setError('');
+            setIsLoading(false);
+            
+            // Store user data in unified format
+            localStorage.setItem('user', JSON.stringify({
+              userType: 'teacher',
+              userId: response.teacherId
+            }));
+            router.push('/teacher');
+          }
         }
       } else {
         // Sign in flow - check if user exists
         if (activeTab === 'student') {
           const response = await authApi.signInStudent({ email });
           
-          // Store student ID for future use
-          localStorage.setItem('studentId', response.studentId);
-          localStorage.setItem('userType', 'student');
+          // Store user data in unified format
+          localStorage.setItem('user', JSON.stringify({
+            userType: 'student',
+            userId: response.studentId
+          }));
           router.push('/student');
         } else {
           const response = await authApi.signInTeacher({ email });
           
-          // Store teacher ID for future use
-          localStorage.setItem('teacherId', response.teacherId);
-          localStorage.setItem('userType', 'teacher');
+          // Store user data in unified format
+          localStorage.setItem('user', JSON.stringify({
+            userType: 'teacher',
+            userId: response.teacherId
+          }));
           router.push('/teacher');
         }
       }

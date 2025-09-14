@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Navigation from '../../components/Navigation';
 import StudentSidebar from '../../components/StudentSidebar';
 import StudentChat from '../../components/StudentChat';
 import styles from './page.module.css';
@@ -75,11 +74,6 @@ export default function StudentPage() {
 
   return (
     <div className={styles.container}>
-      <Navigation 
-        userRole="student" 
-        userName="John Smith" 
-      />
-      
       <main className={styles.main}>
         <div className={styles.layout}>
           <StudentSidebar
