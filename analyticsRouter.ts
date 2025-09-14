@@ -8,7 +8,10 @@ import {
   hourlyMessageHistogram,
   completionRateAndAvgDuration,
   topFaqs,
-  misconceptionsByType
+  generateAnalyticsSummary,
+  misconceptionsByType,
+  getStudentSummaries,
+  getTopicPerformance
 } from './analyticsService';
 
 const router = express.Router();
@@ -157,7 +160,12 @@ router.get('/teacher/:teacherId/hourly', async (req, res) => {
 router.get('/teacher/:teacherId/faqs', async (req, res) => {
   try {
     const { teacherId } = req.params;
-    const { start, end } = validateDateParams(req.query.start as string, req.query.end as string);
+    
+    // Set default dates if not provided
+    const startStr = req.query.start as string || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const endStr = req.query.end as string || new Date().toISOString().split('T')[0];
+    
+    const { start, end } = validateDateParams(startStr, endStr);
     const limit = parseInt(req.query.limit as string) || 10;
 
     if (limit < 1 || limit > 50) {
@@ -218,6 +226,116 @@ router.get('/teacher/:teacherId/faqs', async (req, res) => {
     res.status(400).json({
       error: error instanceof Error ? error.message : 'Unknown error occurred'
     });
+  }
+});
+
+/**
+ * GET /teacher/:teacherId/student-summaries
+ * Returns individual student summaries for NLP aggregation
+ */
+router.get('/teacher/:teacherId/student-summaries', async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    
+    // Set default dates if not provided
+    const startStr = req.query.start as string || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const endStr = req.query.end as string || new Date().toISOString().split('T')[0];
+    
+    const { start, end } = validateDateParams(startStr, endStr);
+
+    const studentSummaries = await getStudentSummaries(teacherId, start, end);
+
+    const response = {
+      teacherId,
+      dateRange: {
+        start: start.toISOString(),
+        end: end.toISOString()
+      },
+      studentSummaries,
+      summary: {
+        totalStudents: studentSummaries.length,
+        totalSummaries: studentSummaries.reduce((sum, student) => sum + student.summaries.length, 0)
+      }
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error fetching student summaries:', error);
+    res.status(500).json({
+      error: 'Failed to fetch student summaries',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * GET /teacher/:teacherId/topic-performance
+ * Returns successful and struggling topics for students
+ */
+router.get('/teacher/:teacherId/topic-performance', async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    
+    // Set default dates if not provided
+    const startStr = req.query.start as string || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const endStr = req.query.end as string || new Date().toISOString().split('T')[0];
+    
+    const { start, end } = validateDateParams(startStr, endStr);
+
+    const topicPerformance = await getTopicPerformance(teacherId, start, end);
+
+    const response = {
+      teacherId,
+      dateRange: {
+        start: start.toISOString(),
+        end: end.toISOString()
+      },
+      ...topicPerformance,
+      summary: {
+        totalSuccessfulTopics: topicPerformance.successfulTopics.length,
+        totalStrugglingTopics: topicPerformance.strugglingTopics.length
+      }
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error fetching topic performance:', error);
+    res.status(500).json({ error: 'Failed to fetch topic performance data' });
+  }
+});
+
+// Analytics Summary endpoint
+router.get('/teacher/:teacherId/analytics-summary', async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    const { start, end } = req.query;
+
+    if (!start || !end) {
+      return res.status(400).json({ error: 'Start and end dates are required' });
+    }
+
+    const startDate = new Date(start as string);
+    const endDate = new Date(end as string);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid date format' });
+    }
+
+    const summaryData = await generateAnalyticsSummary(
+      teacherId,
+      startDate,
+      endDate
+    );
+
+    res.json({
+      teacherId,
+      dateRange: { start: startDate, end: endDate },
+      ...summaryData
+    });
+
+  } catch (error) {
+    console.error('Error generating analytics summary:', error);
+    res.status(500).json({ error: 'Failed to generate analytics summary' });
   }
 });
 

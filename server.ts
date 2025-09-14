@@ -1,9 +1,8 @@
-import { PrismaClient } from "@prisma/client";
-//import {app} from "./app";
-import cors from "cors";
-import dotenv from "dotenv";
-import express, { Request, Response } from "express";
-
+import express, { Request, Response } from 'express';
+import cors from 'cors';
+import { PrismaClient } from '@prisma/client';
+import dotenv from 'dotenv';
+import analyticsRouter from './analyticsRouter';
 
 dotenv.config();
 const app = express();
@@ -11,6 +10,9 @@ const prisma = new PrismaClient();
 
 app.use(cors());
 app.use(express.json());
+
+// Mount analytics router
+app.use('/api', analyticsRouter);
 
 // Test route
 app.get("/", (req: Request, res: Response) => {
