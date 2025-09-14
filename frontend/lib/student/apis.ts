@@ -9,13 +9,32 @@ export interface ChatMessage {
 }
 
 export interface ClassInfo {
-  classId: string;
-  className: string;
+  id: string;
+  name: string;
+  teacherName?: string;
+  studentCount?: number;
+  restrictions?: string;
+  teachingStyle?: string;
+  studentGrade?: string;
+  subject?: string;
+  otherNotes?: string;
 }
 
 export interface StudentInfo {
   interests: string;
   learningStyle: string;
+  classes: ClassInfo[];
+}
+
+export interface JoinClassResponse {
+  success: boolean;
+  message: string;
+  classTitle: string;
+  chatSessionId: string;
+}
+
+export interface GetClassesResponse {
+  success: boolean;
   classes: ClassInfo[];
 }
 
@@ -54,12 +73,18 @@ export const studentApi = {
     return response.data;
   },
 
-  // Join/create new class session
-  joinClass: async (studentId: string, classCode: string): Promise<ClassDetails> => {
+  // Join a class by class ID
+  joinClass: async (classId: string, studentId: string): Promise<JoinClassResponse> => {
     const response = await api.post('/api/student/join-class', {
-      studentId,
-      classCode
+      classId,
+      studentId
     });
+    return response.data;
+  },
+
+  // Get all classes for a student
+  getClasses: async (studentId: string): Promise<GetClassesResponse> => {
+    const response = await api.get(`/api/student/${studentId}/classes`);
     return response.data;
   },
 

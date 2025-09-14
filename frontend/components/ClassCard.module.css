@@ -194,7 +194,7 @@
 .addIcon {
   width: 1.5rem;
   height: 1.5rem;
-  color: hsl(var(--muted-foreground));
+  color: hsl(var(--card-foreground));
   transition: all 0.15s ease-in-out;
 }
 
@@ -206,7 +206,55 @@
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-medium);
   color: hsl(var(--card-foreground));
+  margin: 0 0 var(--spacing-4) 0;
+}
+
+.createForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  width: 100%;
+}
+
+.classInput {
+  padding: var(--spacing-3);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-size: var(--font-size-sm);
   transition: all 0.15s ease-in-out;
+}
+
+.classInput:focus {
+  outline: none;
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
+}
+
+.classInput:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.createButton {
+  padding: var(--spacing-3);
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.createButton:hover:not(:disabled) {
+  background: hsl(var(--primary) / 0.9);
+}
+
+.createButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .addCard:hover .addTitle {

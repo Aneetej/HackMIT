@@ -1,28 +1,48 @@
 'use client';
 
+import { useState } from 'react';
 import styles from './ClassCard.module.css';
 
 interface AddClassCardProps {
-  onAddClass: () => void;
+  onCreateClass: (className: string) => void;
 }
 
-export default function AddClassCard({ onAddClass }: AddClassCardProps) {
+export default function AddClassCard({ onCreateClass }: AddClassCardProps) {
+  const [className, setClassName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (className.trim()) {
+      setIsCreating(true);
+      await onCreateClass(className.trim());
+      setClassName('');
+      setIsCreating(false);
+    }
+  };
+
   return (
-    <div className={styles.addCard} onClick={onAddClass}>
+    <div className={styles.addCard}>
       <div className={styles.addCardContent}>
-        <div className={styles.addIconContainer}>
-          <svg 
-            className={styles.addIcon} 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
+        <h3 className={styles.addTitle}>Create New Class</h3>
+        <form onSubmit={handleSubmit} className={styles.createForm}>
+          <input
+            type="text"
+            value={className}
+            onChange={(e) => setClassName(e.target.value)}
+            placeholder="Enter class title..."
+            className={styles.classInput}
+            disabled={isCreating}
+            maxLength={50}
+          />
+          <button
+            type="submit"
+            disabled={!className.trim() || isCreating}
+            className={styles.createButton}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-        </div>
-        <h3 className={styles.addTitle}>
-          Add Class
-        </h3>
+            {isCreating ? 'Creating...' : 'Create Class'}
+          </button>
+        </form>
       </div>
     </div>
   );

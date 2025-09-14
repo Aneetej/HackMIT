@@ -1,29 +1,59 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ClassCard from '../../components/ClassCard';
 import AddClassCard from '../../components/AddClassCard';
 import styles from './page.module.css';
-import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/navigation';
-interface ClassData {
-  id: string;
-  name: string;
+import { teacherApi, ClassData } from '../../lib/teacher/apis';
+
+interface UserData {
+  userType: 'student' | 'teacher';
+  userId: string;
 }
 
 export default function TeacherDashboard() {
-  const [classes, setClasses] = useState<ClassData[]>([
-    { id: '1', name: 'Mathematics 101' },
-    { id: '2', name: 'Physics Fundamentals' },
-    { id: '3', name: 'Chemistry Lab' },
-    { id: '4', name: 'Biology Basics' },
-  ]);
-  const handleAddClass = () => {
-    const newClass: ClassData = {
-      id: uuidv4(),
-      name: `New Class ${classes.length + 1}`,
-    };
-    setClasses(prev => [...prev, newClass]);
+  const [classes, setClasses] = useState<ClassData[]>([]);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Get user data from localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUserData(parsedUser);
+        if (parsedUser.userType === 'teacher') {
+          loadClasses(parsedUser.userId);
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+    setIsLoading(false);
+  }, []);
+
+  const loadClasses = async (teacherId: string) => {
+    try {
+      const response = await teacherApi.getClasses(teacherId);
+      setClasses(response.classes);
+    } catch (error) {
+      console.error('Error loading classes:', error);
+    }
+  };
+
+  const handleCreateClass = async (className: string) => {
+    if (!userData) return;
+    
+    try {
+      const response = await teacherApi.createClass(userData.userId, { name: className });
+      if (response.success) {
+        setClasses(prev => [response.class, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error creating class:', error);
+    }
   };
   const router = useRouter();
   const handleViewClass = (id: string) => {
@@ -31,16 +61,30 @@ export default function TeacherDashboard() {
         router.push(`/teacher/${id}`);
   };
 
-  const handleEditClass = (id: string, newName: string) => {
-    setClasses(prev => 
-      prev.map(cls => 
-        cls.id === id ? { ...cls, name: newName } : cls
-      )
-    );
+  const handleEditClass = async (id: string, newName: string) => {
+    try {
+      const response = await teacherApi.updateClass(id, { name: newName });
+      if (response.success) {
+        setClasses(prev => 
+          prev.map(cls => 
+            cls.id === id ? { ...cls, name: newName } : cls
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error updating class:', error);
+    }
   };
 
-  const handleDeleteClass = (id: string) => {
-    setClasses(prev => prev.filter(cls => cls.id !== id));
+  const handleDeleteClass = async (id: string) => {
+    try {
+      const response = await teacherApi.deleteClass(id);
+      if (response.success) {
+        setClasses(prev => prev.filter(cls => cls.id !== id));
+      }
+    } catch (error) {
+      console.error('Error deleting class:', error);
+    }
   };
 
   return (
@@ -66,7 +110,7 @@ export default function TeacherDashboard() {
             </div>
           ) : (
             <div className={styles.classesGrid}>
-                <AddClassCard onAddClass={handleAddClass} />
+                <AddClassCard onCreateClass={handleCreateClass} />
                         {classes.slice().reverse().map((classItem) => (
                 <ClassCard
                     key={classItem.id}
@@ -82,7 +126,7 @@ export default function TeacherDashboard() {
 
           {classes.length === 0 && (
             <div style={{ marginTop: 'var(--spacing-6)' }}>
-              <AddClassCard onAddClass={handleAddClass} />
+              <AddClassCard onCreateClass={handleCreateClass} />
             </div>
           )}
         </div>

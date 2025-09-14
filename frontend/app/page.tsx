@@ -37,10 +37,12 @@ export default function Home() {
           });
           
           // Store user data in unified format
+          console.log('Student registration response:', response);
           localStorage.setItem('user', JSON.stringify({
             userType: 'student',
             userId: response.studentId
           }));
+          console.log('Stored user data after registration:', localStorage.getItem('user'));
           router.push('/student');
         } else {
           const response = await authApi.registerTeacher({
@@ -66,10 +68,12 @@ export default function Home() {
           const response = await authApi.signInStudent({ email });
           
           // Store user data in unified format
+          console.log('Student sign in response:', response);
           localStorage.setItem('user', JSON.stringify({
             userType: 'student',
             userId: response.studentId
           }));
+          console.log('Stored user data after sign in:', localStorage.getItem('user'));
           router.push('/student');
         } else {
           const response = await authApi.signInTeacher({ email });

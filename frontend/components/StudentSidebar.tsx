@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import StudentClassCard from './StudentClassCard';
 import styles from './StudentSidebar.module.css';
 
 interface Class {
@@ -21,8 +22,11 @@ interface StudentSidebarProps {
   setInterests: (interests: string) => void;
   learningStyle: string;
   setLearningStyle: (style: string) => void;
+  onUpdatePreferences: () => void;
   sidebarCollapsed: boolean;
   onToggleSidebar: () => void;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
 export default function StudentSidebar({
@@ -38,8 +42,11 @@ export default function StudentSidebar({
   setInterests,
   learningStyle,
   setLearningStyle,
+  onUpdatePreferences,
   sidebarCollapsed,
-  onToggleSidebar
+  onToggleSidebar,
+  isLoading,
+  error
 }: StudentSidebarProps) {
   return (
     <div className={`${styles.leftSidebar} ${sidebarCollapsed ? styles.sidebarCollapsed : ''}`}>
@@ -68,12 +75,17 @@ export default function StudentSidebar({
               <div className={styles.joinHeader}>
                 <span className={styles.joinTitle}>Join Class</span>
               </div>
+              {error && (
+                <div className={styles.errorMessage}>
+                  {error}
+                </div>
+              )}
               <input
                 type="text"
                 className={styles.joinInput}
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value)}
-                placeholder="Enter class code"
+                placeholder="Enter class ID"
               />
               <button 
                 className={styles.joinButton}
@@ -86,21 +98,13 @@ export default function StudentSidebar({
           
           <div className={styles.classesSection}>
             {classes.map((classItem) => (
-              <div 
-                key={classItem.id} 
-                className={`${styles.classCard} ${selectedClass === classItem.id ? styles.classCardSelected : ''}`}
-                onClick={() => onSelectClass(classItem.id)}
-              >
-                <div className={styles.classHeader}>
-                  <span className={styles.className}>&lt;{classItem.name}&gt;</span>
-                </div>
-                <div className={styles.classImage}>
-                  &lt;IMG&gt;
-                </div>
-                <button className={styles.getHelpButton}>
-                  Get help
-                </button>
-              </div>
+              <StudentClassCard
+                key={classItem.id}
+                id={classItem.id}
+                name={classItem.name}
+                isSelected={selectedClass === classItem.id}
+                onSelect={onSelectClass}
+              />
             ))}
           </div>
         </>
@@ -114,6 +118,7 @@ export default function StudentSidebar({
               className={styles.preferenceTextarea}
               value={interests}
               onChange={(e) => setInterests(e.target.value)}
+              onBlur={onUpdatePreferences}
               placeholder=""
             />
           </div>
@@ -124,6 +129,7 @@ export default function StudentSidebar({
               className={styles.preferenceTextarea}
               value={learningStyle}
               onChange={(e) => setLearningStyle(e.target.value)}
+              onBlur={onUpdatePreferences}
               placeholder=""
             />
           </div>

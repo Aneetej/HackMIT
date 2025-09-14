@@ -58,6 +58,45 @@ app.post("/summaries", async (req: Request, res: Response) => {
 });
 
 // STUDENT API ROUTES - Database integrated endpoints
+
+// GET /api/student/:studentId/classes - Get all classes for a student (MUST come before /api/student/:studentId)
+app.get('/api/student/:studentId/classes', async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+      include: {
+        classes: {
+          include: {
+            teacher: {
+              select: { id: true, name: true }
+            },
+            _count: {
+              select: { students: true }
+            }
+          }
+        }
+      }
+    });
+
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    const classesWithDetails = student.classes.map((cls: any) => ({
+      ...cls,
+      studentCount: cls._count.students,
+      teacherName: cls.teacher?.name || 'Unknown Teacher'
+    }));
+
+    res.json({ success: true, classes: classesWithDetails });
+  } catch (error) {
+    console.error('Error fetching student classes:', error);
+    res.status(500).json({ error: 'Failed to fetch classes' });
+  }
+});
+
 // Endpoint: Get student info and enrolled classes
 app.get("/api/student/:studentId", async (req: Request, res: Response) => {
     const { studentId } = req.params;
@@ -180,58 +219,478 @@ app.post("/api/student/:studentId/class/:classId/message", async (req: Request, 
     }
 });
 
-// Endpoint: Join/Create new class session
-app.post("/api/student/join-class", async (req: Request, res: Response) => {
-    const { studentId, classCode } = req.body;
-    
-    try {
-        // Validate student exists
-        const student = await prisma.student.findUnique({
-            where: { id: studentId }
-        });
-
-        if (!student) {
-            return res.status(404).json({ message: "Student not found" });
-        }
-
-        // Create new chat session (treating classCode as session type)
-        const sessionType = classCode.toLowerCase().replace(/\s+/g, '_');
-        const newSession = await prisma.chatSession.create({
-            data: {
-                student_id: studentId,
-                session_type: sessionType,
-                status: 'active'
-            }
-        });
-
-        res.json({
-            classId: newSession.id,
-            className: sessionType.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
-            chatHistory: []
-        });
-    } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
-    }
-});
 
 // Endpoint: Update student preferences
-app.put("/api/student/:studentId/preferences", async (req: Request, res: Response) => {
+app.put('/api/student/:studentId/preferences', async (req, res) => {
+  try {
     const { studentId } = req.params;
     const { interests, learningStyle } = req.body;
-    
-    try {
-        await prisma.student.update({
-            where: { id: studentId },
-            data: {
-                subject_focus: interests,
-                learning_style: learningStyle
-            }
-        });
 
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
+    const updatedStudent = await prisma.student.update({
+      where: { id: studentId },
+      data: {
+        preferred_content: interests,
+        learning_style: learningStyle,
+      },
+    });
+
+    res.json({ success: true, student: updatedStudent });
+  } catch (error) {
+    console.error('Error updating student preferences:', error);
+    res.status(500).json({ error: 'Failed to update preferences' });
+  }
+});
+
+// Student Management Endpoints
+
+// POST /api/student/join-class - Join a class and create chat session
+app.post('/api/student/join-class', async (req, res) => {
+  try {
+    const { classId, studentId } = req.body;
+
+    if (!classId || !studentId) {
+      return res.status(400).json({ error: 'Class ID and Student ID are required' });
     }
+
+    // Check if class exists
+    const classData = await prisma.class.findUnique({
+      where: { id: classId }
+    });
+
+    if (!classData) {
+      return res.status(404).json({ error: 'Invalid class ID' });
+    }
+
+    // Check if student exists
+    const student = await prisma.student.findUnique({
+      where: { id: studentId }
+    });
+
+    if (!student) {
+      return res.status(404).json({ error: 'Student already in class' });
+    }
+
+    // Add student to class
+    await prisma.class.update({
+      where: { id: classId },
+      data: {
+        students: {
+          connect: { id: studentId }
+        }
+      }
+    });
+
+    // Create a new chat session for the student and class
+    const chatSession = await prisma.chatSession.create({
+      data: {
+        student_id: studentId,
+        classId: classId
+      }
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Successfully joined class',
+      classTitle: classData.name,
+      chatSessionId: chatSession.id
+    });
+  } catch (error) {
+    console.error('Error joining class:', error);
+    res.status(500).json({ error: 'Failed to join class' });
+  }
+});
+
+
+// POST /api/teacher/:teacherId/class - Create a new class
+app.post('/api/teacher/:teacherId/class', async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    const { name, restrictions, teachingStyle, studentGrade, subject, otherNotes } = req.body;
+
+    // Generate a 6-digit class ID
+    const generateClassId = () => {
+      return Math.floor(100000 + Math.random() * 900000).toString();
+    };
+
+    let classId = generateClassId();
+    
+    // Ensure unique class ID
+    let existingClass = await prisma.class.findUnique({ where: { id: classId } });
+    while (existingClass) {
+      classId = generateClassId();
+      existingClass = await prisma.class.findUnique({ where: { id: classId } });
+    }
+
+    const newClass = await prisma.class.create({
+      data: {
+        id: classId,
+        name,
+        restrictions,
+        teachingStyle,
+        studentGrade,
+        subject,
+        otherNotes,
+        teacherId,
+      },
+    });
+
+    res.json({ success: true, class: newClass });
+  } catch (error) {
+    console.error('Error creating class:', error);
+    res.status(500).json({ error: 'Failed to create class' });
+  }
+});
+
+// GET /api/teacher/:teacherId/classes - Get all classes for a teacher
+app.get('/api/teacher/:teacherId/classes', async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+
+    const classes = await prisma.class.findMany({
+      where: { teacherId },
+      include: {
+        _count: {
+          select: { students: true }
+        }
+      }
+    });
+
+    const classesWithCount = classes.map(cls => ({
+      ...cls,
+      studentCount: cls._count.students
+    }));
+
+    res.json({ success: true, classes: classesWithCount });
+  } catch (error) {
+    console.error('Error fetching classes:', error);
+    res.status(500).json({ error: 'Failed to fetch classes' });
+  }
+});
+
+// GET /api/class/:classId - Get a single class by ID
+app.get('/api/class/:classId', async (req, res) => {
+  try {
+    const { classId } = req.params;
+
+    const classData = await prisma.class.findUnique({
+      where: { id: classId },
+      include: {
+        _count: {
+          select: { students: true }
+        }
+      }
+    });
+
+    if (!classData) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    const classWithCount = {
+      ...classData,
+      studentCount: classData._count.students
+    };
+
+    res.json({ success: true, class: classWithCount });
+  } catch (error) {
+    console.error('Error fetching class:', error);
+    res.status(500).json({ error: 'Failed to fetch class' });
+  }
+});
+
+// PUT /api/class/:classId - Update class details
+app.put('/api/class/:classId', async (req, res) => {
+  try {
+    const { classId } = req.params;
+    const { name, restrictions, teachingStyle, studentGrade, subject, otherNotes } = req.body;
+
+    const updatedClass = await prisma.class.update({
+      where: { id: classId },
+      data: {
+        name,
+        restrictions,
+        teachingStyle,
+        studentGrade,
+        subject,
+        otherNotes,
+      },
+    });
+
+    res.json({ success: true, class: updatedClass });
+  } catch (error: any) {
+    console.error('Error updating class:', error);
+    if (error.code === 'P2025') {
+      res.status(404).json({ error: 'Class not found' });
+    } else {
+      res.status(500).json({ error: 'Failed to update class' });
+    }
+  }
+});
+
+// DELETE /api/class/:classId - Delete a class
+app.delete('/api/class/:classId', async (req, res) => {
+  try {
+    const { classId } = req.params;
+
+    await prisma.class.delete({
+      where: { id: classId },
+    });
+
+    res.json({ success: true, message: 'Class deleted successfully' });
+  } catch (error: any) {
+    console.error('Error deleting class:', error);
+    if (error.code === 'P2025') {
+      res.status(404).json({ error: 'Class not found' });
+    } else {
+      res.status(500).json({ error: 'Failed to delete class' });
+    }
+  }
+});
+
+// GET /api/class/:classId/students - Get all students for a specific class
+app.get('/api/class/:classId/students', async (req, res) => {
+  try {
+    const { classId } = req.params;
+
+    // First verify the class exists
+    const classExists = await prisma.class.findUnique({
+      where: { id: classId },
+    });
+
+    if (!classExists) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    // Get all students enrolled in this class through chat sessions
+    const students = await prisma.student.findMany({
+      where: {
+        chat_sessions: {
+          some: {
+            classId: classId
+          }
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        grade: true,
+        subject_focus: true,
+        learning_style: true,
+        preferred_content: true,
+        created_at: true,
+        chat_sessions: {
+          where: {
+            classId: classId
+          },
+          select: {
+            id: true,
+            questions_asked: true,
+            started_at: true,
+            ended_at: true,
+            status: true
+          }
+        }
+      },
+      orderBy: {
+        name: 'asc'
+      }
+    });
+
+    res.json({ 
+      success: true, 
+      students: students.map(student => ({
+        ...student,
+        sessionInfo: student.chat_sessions[0] // Since we filter by classId, there should be only one
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching class students:', error);
+    res.status(500).json({ error: 'Failed to fetch students' });
+  }
+});
+
+// GET /api/class/:classId/insights/messages - Get average messages per student over last 7 days
+app.get('/api/class/:classId/insights/messages', async (req, res) => {
+  try {
+    const { classId } = req.params;
+
+    // First verify the class exists
+    const classExists = await prisma.class.findUnique({
+      where: { id: classId },
+    });
+
+    if (!classExists) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    // Calculate date 7 days ago
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    // Get message statistics for students in this class over the last 7 days
+    const messageStats = await prisma.student.findMany({
+      where: {
+        chat_sessions: {
+          some: {
+            classId: classId
+          }
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        chat_sessions: {
+          where: {
+            classId: classId
+          },
+          select: {
+            messages: {
+              where: {
+                timestamp: {
+                  gte: sevenDaysAgo
+                },
+                sender_type: 'student'
+              },
+              select: {
+                id: true,
+                timestamp: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Calculate average messages per student
+    const studentMessageCounts = messageStats.map(student => {
+      const totalMessages = student.chat_sessions.reduce((total: number, session: any) => {
+        return total + session.messages.length;
+      }, 0);
+      
+      return {
+        studentId: student.id,
+        studentName: student.name,
+        messageCount: totalMessages
+      };
+    });
+
+    const totalMessages = studentMessageCounts.reduce((sum, student) => sum + student.messageCount, 0);
+    const averageMessages = studentMessageCounts.length > 0 ? totalMessages / studentMessageCounts.length : 0;
+
+    res.json({
+      success: true,
+      data: {
+        averageMessagesPerStudent: Math.round(averageMessages * 100) / 100, // Round to 2 decimal places
+        totalStudents: studentMessageCounts.length,
+        totalMessages: totalMessages,
+        studentBreakdown: studentMessageCounts,
+        dateRange: {
+          from: sevenDaysAgo.toISOString(),
+          to: new Date().toISOString()
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching message insights:', error);
+    res.status(500).json({ error: 'Failed to fetch message insights' });
+  }
+});
+
+// GET /api/class/:classId/student/:studentId/daily-usage - Get daily usage for a specific student over last 7 days
+app.get('/api/class/:classId/student/:studentId/daily-usage', async (req, res) => {
+  try {
+    const { classId, studentId } = req.params;
+
+    // First verify the class and student exist
+    const classExists = await prisma.class.findUnique({
+      where: { id: classId },
+    });
+
+    if (!classExists) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    const studentExists = await prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!studentExists) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    // Calculate date 7 days ago
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    // Get all messages from this student in this class over the last 7 days
+    const messages = await prisma.chatMessage.findMany({
+      where: {
+        sender_type: 'student',
+        timestamp: {
+          gte: sevenDaysAgo
+        },
+        session: {
+          student_id: studentId,
+          classId: classId
+        }
+      },
+      select: {
+        id: true,
+        timestamp: true,
+        content: true
+      },
+      orderBy: {
+        timestamp: 'asc'
+      }
+    });
+
+    // Group messages by day
+    const dailyUsage = [];
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      date.setHours(0, 0, 0, 0);
+      
+      const nextDate = new Date(date);
+      nextDate.setDate(nextDate.getDate() + 1);
+      
+      const dayMessages = messages.filter(message => {
+        const messageDate = new Date(message.timestamp);
+        return messageDate >= date && messageDate < nextDate;
+      });
+
+      dailyUsage.push({
+        day: days[date.getDay()],
+        date: date.toISOString().split('T')[0],
+        messageCount: dayMessages.length,
+        messages: dayMessages
+      });
+    }
+
+    const totalMessages = messages.length;
+    const averageDaily = totalMessages / 7;
+
+    res.json({
+      success: true,
+      data: {
+        studentId: studentId,
+        studentName: studentExists.name,
+        classId: classId,
+        dailyUsage: dailyUsage,
+        totalMessages: totalMessages,
+        averageDailyMessages: Math.round(averageDaily * 100) / 100,
+        dateRange: {
+          from: sevenDaysAgo.toISOString(),
+          to: new Date().toISOString()
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching student daily usage:', error);
+    res.status(500).json({ error: 'Failed to fetch student daily usage' });
+  }
 });
 
 // Endpoint: Create new student (registration)
@@ -386,6 +845,276 @@ app.post("/api/teacher/signin", async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error("Teacher sign-in error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+// Insight endpoints
+
+// Endpoint: Create a new insight for a specific class
+app.post("/api/classes/:classId/insights", async (req: Request, res: Response) => {
+    const { classId } = req.params;
+    const { title, description } = req.body;
+
+    try {
+        if (!title || !description) {
+            return res.status(400).json({ 
+                message: "Title and description are required" 
+            });
+        }
+
+        // Verify class exists
+        const classExists = await prisma.class.findUnique({
+            where: { id: classId }
+        });
+
+        if (!classExists) {
+            return res.status(404).json({ 
+                message: "Class not found" 
+            });
+        }
+
+        const insight = await prisma.insight.create({
+            data: {
+                title,
+                description,
+                classId
+            }
+        });
+
+        res.status(201).json({
+            success: true,
+            insight
+        });
+    } catch (error) {
+        console.error("Create insight error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+// Endpoint: Fetch all insights for a specific class
+app.get("/api/classes/:classId/insights", async (req: Request, res: Response) => {
+    const { classId } = req.params;
+
+    try {
+        // Verify class exists
+        const classExists = await prisma.class.findUnique({
+            where: { id: classId }
+        });
+
+        if (!classExists) {
+            return res.status(404).json({ 
+                message: "Class not found" 
+            });
+        }
+
+        const insights = await prisma.insight.findMany({
+            where: { classId },
+            orderBy: { id: 'desc' } // Most recent first
+        });
+
+        res.json({
+            success: true,
+            insights
+        });
+    } catch (error) {
+        console.error("Fetch insights error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+// Endpoint: Update an existing insight
+app.put("/api/insights/:insightId", async (req: Request, res: Response) => {
+    const { insightId } = req.params;
+    const { title, description } = req.body;
+
+    try {
+        if (!title || !description) {
+            return res.status(400).json({ 
+                message: "Title and description are required" 
+            });
+        }
+
+        // Check if insight exists
+        const existingInsight = await prisma.insight.findUnique({
+            where: { id: insightId }
+        });
+
+        if (!existingInsight) {
+            return res.status(404).json({ 
+                message: "Insight not found" 
+            });
+        }
+
+        const updatedInsight = await prisma.insight.update({
+            where: { id: insightId },
+            data: {
+                title,
+                description
+            }
+        });
+
+        res.json({
+            success: true,
+            insight: updatedInsight
+        });
+    } catch (error) {
+        console.error("Update insight error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+// Endpoint: Delete an insight
+app.delete("/api/insights/:insightId", async (req: Request, res: Response) => {
+    const { insightId } = req.params;
+
+    try {
+        // Check if insight exists
+        const existingInsight = await prisma.insight.findUnique({
+            where: { id: insightId }
+        });
+
+        if (!existingInsight) {
+            return res.status(404).json({ 
+                message: "Insight not found" 
+            });
+        }
+
+        await prisma.insight.delete({
+            where: { id: insightId }
+        });
+
+        res.json({
+            success: true,
+            message: "Insight deleted successfully"
+        });
+    } catch (error) {
+        console.error("Delete insight error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+// Note endpoints
+
+// Endpoint: Get or create note for a student in a class
+app.get("/api/classes/:classId/students/:studentId/note", async (req: Request, res: Response) => {
+    const { classId, studentId } = req.params;
+
+    try {
+        // Verify class and student exist
+        const classExists = await prisma.class.findUnique({
+            where: { id: classId }
+        });
+
+        if (!classExists) {
+            return res.status(404).json({ 
+                message: "Class not found" 
+            });
+        }
+
+        const studentExists = await prisma.student.findUnique({
+            where: { id: studentId }
+        });
+
+        if (!studentExists) {
+            return res.status(404).json({ 
+                message: "Student not found" 
+            });
+        }
+
+        // Try to find existing note
+        let note = await prisma.note.findFirst({
+            where: {
+                classId,
+                studentId
+            }
+        });
+
+        // If no note exists, create an empty one
+        if (!note) {
+            note = await prisma.note.create({
+                data: {
+                    content: "",
+                    classId,
+                    studentId
+                }
+            });
+        }
+
+        res.json({
+            success: true,
+            note
+        });
+    } catch (error) {
+        console.error("Get note error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+// Endpoint: Update note for a student in a class
+app.put("/api/classes/:classId/students/:studentId/note", async (req: Request, res: Response) => {
+    const { classId, studentId } = req.params;
+    const { content } = req.body;
+
+    try {
+        if (content === undefined) {
+            return res.status(400).json({ 
+                message: "Content is required" 
+            });
+        }
+
+        // Verify class and student exist
+        const classExists = await prisma.class.findUnique({
+            where: { id: classId }
+        });
+
+        if (!classExists) {
+            return res.status(404).json({ 
+                message: "Class not found" 
+            });
+        }
+
+        const studentExists = await prisma.student.findUnique({
+            where: { id: studentId }
+        });
+
+        if (!studentExists) {
+            return res.status(404).json({ 
+                message: "Student not found" 
+            });
+        }
+
+        // Try to find existing note
+        let note = await prisma.note.findFirst({
+            where: {
+                classId,
+                studentId
+            }
+        });
+
+        if (note) {
+            // Update existing note
+            note = await prisma.note.update({
+                where: { id: note.id },
+                data: { content }
+            });
+        } else {
+            // Create new note
+            note = await prisma.note.create({
+                data: {
+                    content,
+                    classId,
+                    studentId
+                }
+            });
+        }
+
+        res.json({
+            success: true,
+            note
+        });
+    } catch (error) {
+        console.error("Update note error:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 });

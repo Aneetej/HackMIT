@@ -39,8 +39,21 @@ model Student {
   learning_analytics LearningAnalytics[]
   preferences        StudentPreference[]
   classes            Class[] @relation("ClassStudents")
+  notes              Note[]
 
   @@map("students")
+}
+
+model Note {
+   id                String   @id @default(cuid())
+   content           String
+
+   class             Class @relation(fields: [classId], references: [id])
+   classId           String
+   student           Student @relation(fields: [studentId], references: [id])
+   studentId         String
+
+   @@map("notes")
 }
 
 model Class {
@@ -48,16 +61,35 @@ model Class {
   name           String
   restrictions   String?
   teachingStyle  String?
+  studentGrade   String? 
+  subject        String? 
+  otherNotes     String?
+  customInsights String[]
 
   // Relationships
   students       Student[]     @relation("ClassStudents")
   teacher        Teacher?      @relation(fields: [teacherId], references: [id])
   teacherId      String?
   chatSessions   ChatSession[]
+  insights       Insight[]
+  notes          Note[]
 
   @@map("classes")
 }
 
+model Insight {
+  id          String @id @default(cuid())
+  title       String
+  description String
+
+  // Relationships
+  class   Class  @relation(fields: [classId], references: [id])
+  classId String
+
+  @@map("insights")
+}
+
+  
 
 model Teacher {
   id         String   @id @default(cuid())
@@ -71,7 +103,7 @@ model Teacher {
   // Relationships
   supervised_students String[] // Array of student IDs they monitor
   analytics_requests  AnalyticsRequest[]
-  classes             Class[] 
+  classes             Class[]
 
   @@map("teachers")
 }
