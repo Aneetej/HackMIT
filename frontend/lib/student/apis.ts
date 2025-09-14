@@ -1,8 +1,75 @@
-// joinClass: post (studentID) -> [classID, className, chat history] | invalid join code
-// getStudentInfo: get (studentID) -> [interests, learningStyle, list[[classID, className]] 
-// getClass: get (studentID, classID) -> [classID, className, chat history]
+import api from '../axios-config';
 
-//updatPreferences: put (studentID, interests, learningStyle)
+// TypeScript interfaces for API responses
+export interface ChatMessage {
+  id: string;
+  message: string;
+  sender: 'user' | 'assistant';
+  timestamp: string;
+}
 
-//sendMessage: post (studentID, classID, message) -> response 
+export interface ClassInfo {
+  classId: string;
+  className: string;
+}
+
+export interface StudentInfo {
+  interests: string;
+  learningStyle: string;
+  classes: ClassInfo[];
+}
+
+export interface ClassDetails {
+  classId: string;
+  className: string;
+  chatHistory: ChatMessage[];
+}
+
+export interface MessageResponse {
+  id: string;
+  message: string;
+  sender: 'assistant';
+  timestamp: string;
+}
+
+// API Functions
+export const studentApi = {
+  // Get student info and enrolled classes
+  getStudentInfo: async (studentId: string): Promise<StudentInfo> => {
+    const response = await api.get(`/api/student/${studentId}`);
+    return response.data;
+  },
+
+  // Get class details and chat history
+  getClass: async (studentId: string, classId: string): Promise<ClassDetails> => {
+    const response = await api.get(`/api/student/${studentId}/class/${classId}`);
+    return response.data;
+  },
+
+  // Send message and get AI response
+  sendMessage: async (studentId: string, classId: string, message: string): Promise<MessageResponse> => {
+    const response = await api.post(`/api/student/${studentId}/class/${classId}/message`, {
+      message
+    });
+    return response.data;
+  },
+
+  // Join/create new class session
+  joinClass: async (studentId: string, classCode: string): Promise<ClassDetails> => {
+    const response = await api.post('/api/student/join-class', {
+      studentId,
+      classCode
+    });
+    return response.data;
+  },
+
+  // Update student preferences
+  updatePreferences: async (studentId: string, interests: string, learningStyle: string): Promise<{ success: boolean }> => {
+    const response = await api.put(`/api/student/${studentId}/preferences`, {
+      interests,
+      learningStyle
+    });
+    return response.data;
+  }
+}; 
 
