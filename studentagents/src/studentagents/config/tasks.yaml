@@ -1,0 +1,13 @@
+studentTask:
+  description: >
+    Converse with the student and assist them in learning {topic}. Ensure you are presenting the material in the way the student prefers.
+  expected_output: >
+    The student should be able to understand the material and be able to apply it to real-world problems.
+  agent: studentAgent
+
+analystTask:
+  description: >
+    Analyze the student's conversation and summarize their interaction. Determine the frequently asked questions, topics where the student was struggling, and suggestions for the teacher when updating lesson plans.
+  expected_output: >
+    A one paragraph summary of the interaction with all relevant information. Must be less than 250 words.
+  agent: studentAnalyst
