@@ -106,7 +106,7 @@ export default function Home() {
     <div className={styles.page}>
       <main className={styles.main}>
         <div className={styles.hero}>
-          <h1 className={styles.title}>MathEngageAI</h1>
+          <h1 className={styles.title}>Lumos</h1>
           <p className={styles.subtitle}>
             Personalized AI tutoring that adapts to your learning style
           </p>

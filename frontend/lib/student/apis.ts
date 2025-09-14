@@ -70,6 +70,7 @@ export const studentApi = {
     const response = await api.post(`/api/student/${studentId}/class/${classId}/message`, {
       message
     });
+    console.log("response", response)
     return response.data;
   },
 

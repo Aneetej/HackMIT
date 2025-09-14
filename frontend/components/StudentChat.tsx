@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import styles from './StudentChat.module.css';
 
 interface Message {
@@ -69,7 +70,11 @@ export default function StudentChat({
                     className={`${styles.message} ${message.sender === 'user' ? styles.userMessage : styles.assistantMessage}`}
                   >
                     <div className={styles.messageContent}>
-                      {message.text}
+                      {message.sender === 'assistant' ? (
+                        <ReactMarkdown>{message.text}</ReactMarkdown>
+                      ) : (
+                        message.text
+                      )}
                     </div>
                     <div className={styles.messageTime}>
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

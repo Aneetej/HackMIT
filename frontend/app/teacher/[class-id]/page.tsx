@@ -116,27 +116,10 @@ export default function ClassDetailPage() {
         />
       </div>
 
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Resources</h2>
-        <div className={styles.uploadArea} onClick={() => document.getElementById('fileInput')?.click()}>
-          <svg className={styles.uploadIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-          </svg>
-          <div className={styles.uploadText}>Upload resources</div>
-          <div className={styles.uploadSubtext}>Click to select files or drag and drop</div>
-        </div>
-        <input
-          id="fileInput"
-          type="file"
-          multiple
-          style={{ display: 'none' }}
-          onChange={handleFileUpload}
-        />
-      </div>
 
       <div className={styles.rightColumn}>
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Student Grade</h2>
+          <h2 className={styles.sectionTitle}>Student Grade Level</h2>
           <input
             className={styles.input}
             type="text"

@@ -110,9 +110,9 @@ export default function StudentPage() {
     }
   };
 
-  const handleSendMessage = () => {
-    if (chatMessage.trim() && selectedClass) {
-      const newMessage: Message = {
+  const handleSendMessage = async () => {
+    if (chatMessage.trim() && selectedClass && studentId) {
+      const userMessage: Message = {
         id: Date.now().toString(),
         text: chatMessage,
         sender: 'user',
@@ -120,20 +120,37 @@ export default function StudentPage() {
         classId: selectedClass
       };
       
-      setMessages([...messages, newMessage]);
+      // Add user message to UI immediately
+      setMessages(prev => [...prev, userMessage]);
+      const currentMessage = chatMessage;
       setChatMessage('');
       
-      // Simulate assistant response after a short delay
-      setTimeout(() => {
+      try {
+        // Call the API to send message and get AI response
+        const response = await studentApi.sendMessage(studentId, selectedClass, currentMessage);
+        
+        // Add AI response to messages
         const assistantMessage: Message = {
+          id: response.id,
+          text: response.message,
+          sender: 'assistant',
+          timestamp: new Date(response.timestamp),
+          classId: selectedClass
+        };
+        
+        setMessages(prev => [...prev, assistantMessage]);
+      } catch (error) {
+        console.error('Error sending message:', error);
+        // Add error message to chat
+        const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
-          text: `I understand you're asking about "${chatMessage}". Let me help you with that in ${classes.find(c => c.id === selectedClass)?.name}.`,
+          text: 'Sorry, I encountered an error processing your message. Please try again.',
           sender: 'assistant',
           timestamp: new Date(),
           classId: selectedClass
         };
-        setMessages(prev => [...prev, assistantMessage]);
-      }, 1000);
+        setMessages(prev => [...prev, errorMessage]);
+      }
     }
   };
 

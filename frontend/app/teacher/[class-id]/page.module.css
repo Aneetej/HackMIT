@@ -88,6 +88,7 @@
 .contentGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr auto;
   gap: var(--spacing-8);
   margin-bottom: var(--spacing-8);
 }
@@ -104,6 +105,13 @@
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius-lg);
   padding: var(--spacing-6);
+  display: flex;
+  flex-direction: column;
+}
+
+.section .smallTextArea,
+.section .input {
+  flex: 1;
 }
 
 .sectionTitle {
@@ -139,9 +147,17 @@
 }
 
 .rightColumn {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr;
+  align-items: stretch;
   gap: var(--spacing-6);
+}
+
+@media (max-width: 768px) {
+  .rightColumn {
+    grid-template-columns: 1fr;
+  }
 }
 
 .formGroup {
@@ -157,7 +173,8 @@
 }
 
 .input {
-  padding: var(--spacing-2) var(--spacing-3);
+  width: 100%;
+  padding: var(--spacing-3);
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius-md);
   background: hsl(var(--background));
@@ -179,7 +196,7 @@
 
 .smallTextArea {
   width: 100%;
-  min-height: 80px;
+  min-height: 120px;
   padding: var(--spacing-3);
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius-md);

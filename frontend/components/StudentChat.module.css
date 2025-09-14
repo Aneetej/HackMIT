@@ -163,3 +163,87 @@
   margin-top: 0.25rem;
   padding: 0 0.5rem;
 }
+
+.markdownContent {
+  line-height: 1.6;
+  color: inherit;
+}
+
+.markdownContent h1,
+.markdownContent h2,
+.markdownContent h3,
+.markdownContent h4,
+.markdownContent h5,
+.markdownContent h6 {
+  margin: 0.5em 0;
+  font-weight: bold;
+  color: inherit;
+}
+
+.markdownContent h1 {
+  font-size: 1.2em;
+}
+
+.markdownContent h2 {
+  font-size: 1.1em;
+}
+
+.markdownContent h3 {
+  font-size: 1.05em;
+}
+
+.markdownContent p {
+  margin: 0.5em 0;
+}
+
+.markdownContent ul,
+.markdownContent ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.markdownContent li {
+  margin: 0.25em 0;
+}
+
+.markdownContent strong {
+  font-weight: bold;
+  color: hsl(var(--accent));
+}
+
+.markdownContent em {
+  font-style: italic;
+}
+
+.markdownContent code {
+  background-color: hsl(var(--muted) / 0.3);
+  color: hsl(var(--accent));
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.markdownContent pre {
+  background-color: hsl(var(--muted) / 0.2);
+  border: 1px solid hsl(var(--border));
+  padding: 1em;
+  border-radius: 5px;
+  overflow-x: auto;
+  margin: 0.5em 0;
+}
+
+.markdownContent pre code {
+  background-color: transparent;
+  color: hsl(var(--foreground));
+  padding: 0;
+}
+
+.markdownContent blockquote {
+  border-left: 3px solid hsl(var(--accent));
+  background-color: hsl(var(--muted) / 0.1);
+  padding: 0.5em 1em;
+  margin: 0.5em 0;
+  font-style: italic;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}

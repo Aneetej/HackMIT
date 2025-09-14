@@ -97,7 +97,6 @@ export default function ClassCard({ id, name, onView, onEdit, onDelete }: ClassC
       </div>
 
       <div className={styles.placeholderImage}>
-        <span>Class Image</span>
       </div>
 
       <div className={styles.cardFooter}>

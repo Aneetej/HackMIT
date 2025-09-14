@@ -4,6 +4,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator py {
+  provider = "prisma-client-py"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -38,7 +42,7 @@ model Student {
   chat_sessions      ChatSession[]
   learning_analytics LearningAnalytics[]
   preferences        StudentPreference[]
-  classes            Class[] @relation("ClassStudents")
+  classrooms         Classroom[] @relation("ClassStudents")
   notes              Note[]
 
   @@map("students")
@@ -48,7 +52,7 @@ model Note {
    id                String   @id @default(cuid())
    content           String
 
-   class             Class @relation(fields: [classId], references: [id])
+   classroom         Classroom @relation(fields: [classId], references: [id])
    classId           String
    student           Student @relation(fields: [studentId], references: [id])
    studentId         String
@@ -56,7 +60,7 @@ model Note {
    @@map("notes")
 }
 
-model Class {
+model Classroom {
   id             String        @id @db.Char(6)   // 6-digit numeric string
   name           String
   restrictions   String?
@@ -83,13 +87,11 @@ model Insight {
   description String
 
   // Relationships
-  class   Class  @relation(fields: [classId], references: [id])
+  classroom   Classroom  @relation(fields: [classId], references: [id])
   classId String
 
   @@map("insights")
 }
-
-  
 
 model Teacher {
   id         String   @id @default(cuid())
@@ -103,7 +105,7 @@ model Teacher {
   // Relationships
   supervised_students String[] // Array of student IDs they monitor
   analytics_requests  AnalyticsRequest[]
-  classes             Class[]
+  classrooms         Classroom[]
 
   @@map("teachers")
 }
@@ -126,9 +128,8 @@ model ChatSession {
   student   Student           @relation(fields: [student_id], references: [id])
   messages  ChatMessage[]
   takeaways SessionTakeaway[]
-
+  classroom Classroom? @relation(fields: [classId], references:[id])
   classId   String?
-  class     Class? @relation(fields: [classId], references:[id])
 
   @@map("chat_sessions")
 }

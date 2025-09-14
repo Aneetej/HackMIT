@@ -1,24 +1,24 @@
 :root {
-  /* shadcn/ui semantic color system */
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222.2 84% 4.9%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96%;
-  --accent-foreground: 222.2 84% 4.9%;
+  /* shadcn/ui semantic color system - Updated for tan/teal theme */
+  --background: 30 20% 92%; /* Warm tan background */
+  --foreground: 180 25% 15%; /* Dark teal for text */
+  --card: 28 25% 88%; /* Slightly darker tan for cards */
+  --card-foreground: 180 25% 15%;
+  --popover: 28 25% 88%;
+  --popover-foreground: 180 25% 15%;
+  --primary: 180 35% 45%; /* Muted teal primary */
+  --primary-foreground: 30 20% 95%; /* Light tan text on teal */
+  --secondary: 25 30% 85%; /* Warm beige secondary */
+  --secondary-foreground: 180 25% 20%;
+  --muted: 25 25% 82%; /* Muted tan */
+  --muted-foreground: 180 15% 40%; /* Muted teal text */
+  --accent: 180 40% 50%; /* Brighter teal accent */
+  --accent-foreground: 30 20% 95%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
+  --border: 25 20% 78%; /* Tan border */
+  --input: 25 20% 78%;
+  --ring: 180 35% 45%; /* Teal focus ring */
   --radius: 0.5rem;
   
   /* Success colors */
@@ -177,4 +177,3 @@ input, select, textarea {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-

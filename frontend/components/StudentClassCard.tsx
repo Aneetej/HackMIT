@@ -20,7 +20,7 @@ export default function StudentClassCard({ id, name, isSelected, onSelect }: Stu
         <span className={styles.className}>{name}</span>
       </div>
       <div className={styles.classImage}>
-        &lt;IMG&gt;
+
       </div>
 
     </div>

@@ -16,7 +16,6 @@ export default function StudentCard({ id, name, onView }: StudentCardProps) {
       </div>
 
       <div className={styles.placeholderImage}>
-        <span>&lt;IMG&gt;</span>
       </div>
 
       <div className={styles.cardFooter}>

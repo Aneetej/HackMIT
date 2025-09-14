@@ -41,7 +41,7 @@ export default function Header() {
       <div className={styles.container}>
         <Link href="/" className={styles.logo}>
           <div className={styles.logoPlaceholder}>
-            MathEngageAI
+            Lumos
           </div>
         </Link>
 

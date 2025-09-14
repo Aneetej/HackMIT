@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import cors from "cors";
 import dotenv from "dotenv";
 import express, { Request, Response } from "express";
-
+import axios from "axios";
 
 dotenv.config();
 const app = express();
@@ -67,7 +67,7 @@ app.get('/api/student/:studentId/classes', async (req, res) => {
     const student = await prisma.student.findUnique({
       where: { id: studentId },
       include: {
-        classes: {
+        classrooms: {
           include: {
             teacher: {
               select: { id: true, name: true }
@@ -84,7 +84,7 @@ app.get('/api/student/:studentId/classes', async (req, res) => {
       return res.status(404).json({ error: 'Student not found' });
     }
 
-    const classesWithDetails = student.classes.map((cls: any) => ({
+    const classesWithDetails = student.classrooms.map((cls: any) => ({
       ...cls,
       studentCount: cls._count.students,
       teacherName: cls.teacher?.name || 'Unknown Teacher'
@@ -173,73 +173,156 @@ app.get("/api/student/:studentId/class/:classId", async (req: Request, res: Resp
     }
 });
 
-// Endpoint: Send message and get AI response
 app.post("/api/student/:studentId/class/:classId/message", async (req: Request, res: Response) => {
-    const { studentId, classId } = req.params;
-    const { message } = req.body;
+    console.log('Message endpoint hit');
     
     try {
-        // Save user message
-        const userMessage = await prisma.chatMessage.create({
-            data: {
-                session_id: classId,
-                sender_type: 'student',
-                content: message,
-                message_type: 'text'
-            }
-        });
+        const { studentId, classId } = req.params;
+        const { message } = req.body;
+        
+        // Validate required parameters
+        if (!studentId || !classId || !message) {
+            console.error('Missing required parameters:', { studentId, classId, message });
+            return res.status(400).json({ 
+                error: "Missing required parameters",
+                details: { studentId: !!studentId, classId: !!classId, message: !!message }
+            });
+        }
+        
+        console.log('Processing message:', { studentId, classId, messageLength: message.length });
 
-        // For now, create a simple AI response (replace with actual AI integration later)
-        const aiResponse = await prisma.chatMessage.create({
-            data: {
-                session_id: classId,
-                sender_type: 'agent',
-                agent_type: 'student_agent',
-                content: `I understand you're asking about "${message}". Let me help you with that.`,
-                message_type: 'text'
+        // Find the ChatSession using studentId and classId
+        let chatSession;
+        try {
+            chatSession = await prisma.chatSession.findFirst({
+                where: {
+                    student_id: studentId,
+                    classId: classId
+                }
+            });
+            
+        console.log("CHRWF, ", chatSession)
+        } catch (sessionError) {
+            console.error('Error handling ChatSession:', sessionError);
+            return res.status(500).json({ 
+                error: "Database error with chat session",
+                details: sessionError instanceof Error ? sessionError.message : 'Unknown session error'
+            });
+        }
+
+        // Save user message with error handling (using the actual session_id)
+        let userMessage;
+        try {
+            userMessage = await prisma.chatMessage.create({
+                data: {
+                    session_id: chatSession?.id, // Use the actual ChatSession ID
+                    sender_type: 'student',
+                    content: message,
+                    message_type: 'text'
+                }
+            });
+            console.log('User message saved:', userMessage.id);
+        } catch (dbError) {
+            console.error('Database error saving user message:', dbError);
+            return res.status(500).json({ 
+                error: "Database error saving message",
+                details: dbError instanceof Error ? dbError.message : 'Unknown database error'
+            });
+        }
+
+        // Call FastAPI to get AI response
+        let aiResponseContent = `I understand you're asking about "${message}". Let me help you with that.`; // Fallback response
+        
+        try {
+            console.log('Calling FastAPI...');
+            const fastApiResponse = await axios.post('http://localhost:8000/api/chat/message', {
+                chat_session_id: chatSession?.id,
+                student_id: studentId,
+                user_message: message,
+                class_id: classId
+            }, {
+                timeout: 30000, // 30 second timeout
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (fastApiResponse.status === 200) {
+                const fastApiData = fastApiResponse.data;
+                aiResponseContent = fastApiData.response || aiResponseContent;
+                console.log('FastAPI response received', aiResponseContent);
+            } else {
+                console.error('FastAPI call failed:', fastApiResponse.status, fastApiResponse.statusText);
             }
-        });
+        } catch (fetchError) {
+            console.error('Error calling FastAPI:', {
+                message: fetchError instanceof Error ? fetchError.message : 'Unknown error',
+                code: axios.isAxiosError(fetchError) ? fetchError.code : 'Unknown',
+                response: axios.isAxiosError(fetchError) ? fetchError.response?.data : 'No response data'
+            });
+            // Will use fallback response - this is fine, don't return error here
+        }
+
+        // Save AI response to database
+        let aiResponse;
+        try {
+            aiResponse = await prisma.chatMessage.create({
+                data: {
+                    session_id: chatSession.id, // Use the actual ChatSession ID
+                    sender_type: 'agent',
+                    agent_type: 'student_agent',
+                    content: aiResponseContent,
+                    message_type: 'text'
+                }
+            });
+            console.log('AI response saved:', aiResponse.id);
+        } catch (dbError) {
+            console.error('Database error saving AI response:', dbError);
+            return res.status(500).json({ 
+                error: "Database error saving AI response",
+                details: dbError instanceof Error ? dbError.message : 'Unknown database error'
+            });
+        }
 
         // Update session metrics
-        await prisma.chatSession.update({
-            where: { id: classId },
-            data: {
-                questions_asked: { increment: 1 }
-            }
-        });
+        try {
+            await prisma.chatSession.update({
+                where: { id: chatSession.id },
+                data: {
+                    questions_asked: { increment: 1 }
+                }
+            });
+            console.log('Session metrics updated');
+        } catch (dbError) {
+            console.error('Error updating session metrics:', dbError);
+            // Don't fail the request for this, just log it
+        }
 
-        res.json({
+        const response = {
             id: aiResponse.id,
             message: aiResponse.content,
             sender: 'assistant',
             timestamp: aiResponse.timestamp.toISOString()
-        });
+        };
+        
+        console.log('Sending successful response');
+        res.json(response);
+        
     } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
+        console.error("Unexpected error in message endpoint:", {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : 'No stack trace',
+            type: typeof error,
+            error
+        });
+        
+        res.status(500).json({ 
+            error: "Internal server error",
+            message: error instanceof Error ? error.message : 'Unknown error occurred'
+        });
     }
 });
 
-
-// Endpoint: Update student preferences
-app.put('/api/student/:studentId/preferences', async (req, res) => {
-  try {
-    const { studentId } = req.params;
-    const { interests, learningStyle } = req.body;
-
-    const updatedStudent = await prisma.student.update({
-      where: { id: studentId },
-      data: {
-        preferred_content: interests,
-        learning_style: learningStyle,
-      },
-    });
-
-    res.json({ success: true, student: updatedStudent });
-  } catch (error) {
-    console.error('Error updating student preferences:', error);
-    res.status(500).json({ error: 'Failed to update preferences' });
-  }
-});
 
 // Student Management Endpoints
 
@@ -253,7 +336,7 @@ app.post('/api/student/join-class', async (req, res) => {
     }
 
     // Check if class exists
-    const classData = await prisma.class.findUnique({
+    const classData = await prisma.classroom.findUnique({
       where: { id: classId }
     });
 
@@ -271,7 +354,7 @@ app.post('/api/student/join-class', async (req, res) => {
     }
 
     // Add student to class
-    await prisma.class.update({
+    await prisma.classroom.update({
       where: { id: classId },
       data: {
         students: {
@@ -315,13 +398,13 @@ app.post('/api/teacher/:teacherId/class', async (req, res) => {
     let classId = generateClassId();
     
     // Ensure unique class ID
-    let existingClass = await prisma.class.findUnique({ where: { id: classId } });
+    let existingClass = await prisma.classroom.findUnique({ where: { id: classId } });
     while (existingClass) {
       classId = generateClassId();
-      existingClass = await prisma.class.findUnique({ where: { id: classId } });
+      existingClass = await prisma.classroom.findUnique({ where: { id: classId } });
     }
 
-    const newClass = await prisma.class.create({
+    const newClass = await prisma.classroom.create({
       data: {
         id: classId,
         name,
@@ -346,7 +429,7 @@ app.get('/api/teacher/:teacherId/classes', async (req, res) => {
   try {
     const { teacherId } = req.params;
 
-    const classes = await prisma.class.findMany({
+    const classes = await prisma.classroom.findMany({
       where: { teacherId },
       include: {
         _count: {
@@ -368,11 +451,11 @@ app.get('/api/teacher/:teacherId/classes', async (req, res) => {
 });
 
 // GET /api/class/:classId - Get a single class by ID
-app.get('/api/class/:classId', async (req, res) => {
+app.get('/api/classroom/:classId', async (req, res) => {
   try {
     const { classId } = req.params;
 
-    const classData = await prisma.class.findUnique({
+    const classData = await prisma.classroom.findUnique({
       where: { id: classId },
       include: {
         _count: {
@@ -398,12 +481,12 @@ app.get('/api/class/:classId', async (req, res) => {
 });
 
 // PUT /api/class/:classId - Update class details
-app.put('/api/class/:classId', async (req, res) => {
+app.put('/api/classroom/:classId', async (req, res) => {
   try {
     const { classId } = req.params;
     const { name, restrictions, teachingStyle, studentGrade, subject, otherNotes } = req.body;
 
-    const updatedClass = await prisma.class.update({
+    const updatedClass = await prisma.classroom.update({
       where: { id: classId },
       data: {
         name,
@@ -427,11 +510,11 @@ app.put('/api/class/:classId', async (req, res) => {
 });
 
 // DELETE /api/class/:classId - Delete a class
-app.delete('/api/class/:classId', async (req, res) => {
+app.delete('/api/classroom/:classId', async (req, res) => {
   try {
     const { classId } = req.params;
 
-    await prisma.class.delete({
+    await prisma.classroom.delete({
       where: { id: classId },
     });
 
@@ -447,12 +530,12 @@ app.delete('/api/class/:classId', async (req, res) => {
 });
 
 // GET /api/class/:classId/students - Get all students for a specific class
-app.get('/api/class/:classId/students', async (req, res) => {
+app.get('/api/classroom/:classId/students', async (req, res) => {
   try {
     const { classId } = req.params;
 
     // First verify the class exists
-    const classExists = await prisma.class.findUnique({
+    const classExists = await prisma.classroom.findUnique({
       where: { id: classId },
     });
 
@@ -510,12 +593,12 @@ app.get('/api/class/:classId/students', async (req, res) => {
 });
 
 // GET /api/class/:classId/insights/messages - Get average messages per student over last 7 days
-app.get('/api/class/:classId/insights/messages', async (req, res) => {
+app.get('/api/classroom/:classId/insights/messages', async (req, res) => {
   try {
     const { classId } = req.params;
 
     // First verify the class exists
-    const classExists = await prisma.class.findUnique({
+    const classExists = await prisma.classroom.findUnique({
       where: { id: classId },
     });
 
@@ -597,12 +680,12 @@ app.get('/api/class/:classId/insights/messages', async (req, res) => {
 });
 
 // GET /api/class/:classId/student/:studentId/daily-usage - Get daily usage for a specific student over last 7 days
-app.get('/api/class/:classId/student/:studentId/daily-usage', async (req, res) => {
+app.get('/api/classroom/:classId/student/:studentId/daily-usage', async (req, res) => {
   try {
     const { classId, studentId } = req.params;
 
     // First verify the class and student exist
-    const classExists = await prisma.class.findUnique({
+    const classExists = await prisma.classroom.findUnique({
       where: { id: classId },
     });
 
@@ -852,7 +935,7 @@ app.post("/api/teacher/signin", async (req: Request, res: Response) => {
 // Insight endpoints
 
 // Endpoint: Create a new insight for a specific class
-app.post("/api/classes/:classId/insights", async (req: Request, res: Response) => {
+app.post("/api/classrooms/:classId/insights", async (req: Request, res: Response) => {
     const { classId } = req.params;
     const { title, description } = req.body;
 
@@ -864,7 +947,7 @@ app.post("/api/classes/:classId/insights", async (req: Request, res: Response) =
         }
 
         // Verify class exists
-        const classExists = await prisma.class.findUnique({
+        const classExists = await prisma.classroom.findUnique({
             where: { id: classId }
         });
 
@@ -893,12 +976,12 @@ app.post("/api/classes/:classId/insights", async (req: Request, res: Response) =
 });
 
 // Endpoint: Fetch all insights for a specific class
-app.get("/api/classes/:classId/insights", async (req: Request, res: Response) => {
+app.get("/api/classrooms/:classId/insights", async (req: Request, res: Response) => {
     const { classId } = req.params;
 
     try {
         // Verify class exists
-        const classExists = await prisma.class.findUnique({
+        const classExists = await prisma.classroom.findUnique({
             where: { id: classId }
         });
 
@@ -997,12 +1080,12 @@ app.delete("/api/insights/:insightId", async (req: Request, res: Response) => {
 // Note endpoints
 
 // Endpoint: Get or create note for a student in a class
-app.get("/api/classes/:classId/students/:studentId/note", async (req: Request, res: Response) => {
+app.get("/api/classrooms/:classId/students/:studentId/note", async (req: Request, res: Response) => {
     const { classId, studentId } = req.params;
 
     try {
         // Verify class and student exist
-        const classExists = await prisma.class.findUnique({
+        const classExists = await prisma.classroom.findUnique({
             where: { id: classId }
         });
 
@@ -1052,7 +1135,7 @@ app.get("/api/classes/:classId/students/:studentId/note", async (req: Request, r
 });
 
 // Endpoint: Update note for a student in a class
-app.put("/api/classes/:classId/students/:studentId/note", async (req: Request, res: Response) => {
+app.put("/api/classrooms/:classId/students/:studentId/note", async (req: Request, res: Response) => {
     const { classId, studentId } = req.params;
     const { content } = req.body;
 
@@ -1064,7 +1147,7 @@ app.put("/api/classes/:classId/students/:studentId/note", async (req: Request, r
         }
 
         // Verify class and student exist
-        const classExists = await prisma.class.findUnique({
+        const classExists = await prisma.classroom.findUnique({
             where: { id: classId }
         });
 
@@ -1119,6 +1202,56 @@ app.put("/api/classes/:classId/students/:studentId/note", async (req: Request, r
     }
 });
 
+// PUT /api/student/:studentId/preferences - Update student preferences
+app.put('/api/student/:studentId/preferences', async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const { interests, learningStyle } = req.body;
+
+    // Validate required parameters
+    if (!studentId && !interests && !learningStyle) {
+      return res.status(400).json({ 
+        error: "Missing required parameters",
+        details: { studentId: !!studentId, interests: !!interests, learningStyle: !!learningStyle }
+      });
+    }
+
+    // Update student preferences in database
+    const updatedStudent = await prisma.student.update({
+      where: { id: studentId },
+      data: {
+        subject_focus: interests,
+        learning_style: learningStyle,
+        updated_at: new Date()
+      }
+    });
+
+    console.log(`Updated preferences for student ${studentId}:`, {
+      subject_focus: interests,
+      learning_style: learningStyle
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Preferences updated successfully',
+      student: {
+        id: updatedStudent.id,
+        subject_focus: updatedStudent.subject_focus,
+        learning_style: updatedStudent.learning_style
+      }
+    });
+
+  } catch (error) {
+    console.error('Error updating student preferences:', error);
+    
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+    
+    res.status(500).json({ error: 'Failed to update preferences' });
+  }
+});
+
 const port = process.env.PORT || 4000 ;
 
 app.listen(port, ()=> console.log(`API up on :${port}`) );
@@ -1126,4 +1259,3 @@ app.listen(port, ()=> console.log(`API up on :${port}`) );
 // nice shutdown 
 process.on("SIGINT", async () => {await prisma.$disconnect(); process.exit(0);});
 process.on("SIGTERM", async () => {await prisma.$disconnect(); process.exit(0);});
-
