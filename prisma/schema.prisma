@@ -38,6 +38,7 @@ model Student {
   chat_sessions      ChatSession[]
   learning_analytics LearningAnalytics[]
   preferences        StudentPreference[]
+  classes            Class[] @relation("ClassStudents")
 
   @@map("students")
 }
@@ -70,6 +71,7 @@ model Teacher {
   // Relationships
   supervised_students String[] // Array of student IDs they monitor
   analytics_requests  AnalyticsRequest[]
+  classes             Class[] 
 
   @@map("teachers")
 }
@@ -92,6 +94,9 @@ model ChatSession {
   student   Student           @relation(fields: [student_id], references: [id])
   messages  ChatMessage[]
   takeaways SessionTakeaway[]
+
+  classId   String?
+  class     Class? @relation(fields: [classId], references:[id])
 
   @@map("chat_sessions")
 }
