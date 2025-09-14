@@ -38,10 +38,65 @@ model Student {
   chat_sessions      ChatSession[]
   learning_analytics LearningAnalytics[]
   preferences        StudentPreference[]
+<<<<<<< HEAD
+=======
+  classes            Class[] @relation("ClassStudents")
+  notes              Note[]
+>>>>>>> origin/backend-frontend
 
   @@map("students")
 }
 
+<<<<<<< HEAD
+=======
+model Note {
+   id                String   @id @default(cuid())
+   content           String
+
+   class             Class @relation(fields: [classId], references: [id])
+   classId           String
+   student           Student @relation(fields: [studentId], references: [id])
+   studentId         String
+
+   @@map("notes")
+}
+
+model Class {
+  id             String        @id @db.Char(6)   // 6-digit numeric string
+  name           String
+  restrictions   String?
+  teachingStyle  String?
+  studentGrade   String? 
+  subject        String? 
+  otherNotes     String?
+  customInsights String[]
+
+  // Relationships
+  students       Student[]     @relation("ClassStudents")
+  teacher        Teacher?      @relation(fields: [teacherId], references: [id])
+  teacherId      String?
+  chatSessions   ChatSession[]
+  insights       Insight[]
+  notes          Note[]
+
+  @@map("classes")
+}
+
+model Insight {
+  id          String @id @default(cuid())
+  title       String
+  description String
+
+  // Relationships
+  class   Class  @relation(fields: [classId], references: [id])
+  classId String
+
+  @@map("insights")
+}
+
+  
+
+>>>>>>> origin/backend-frontend
 model Teacher {
   id         String   @id @default(cuid())
   name       String
@@ -54,6 +109,10 @@ model Teacher {
   // Relationships
   supervised_students String[] // Array of student IDs they monitor
   analytics_requests  AnalyticsRequest[]
+<<<<<<< HEAD
+=======
+  classes             Class[]
+>>>>>>> origin/backend-frontend
 
   @@map("teachers")
 }
@@ -63,7 +122,11 @@ model ChatSession {
   student_id   String
   session_type String    @default("tutoring") // "tutoring", "homework_help", "concept_review" "exam_prep"
   started_at   DateTime  @default(now())
+<<<<<<< HEAD
   ended_at     DateTime?  
+=======
+  ended_at     DateTime?
+>>>>>>> origin/backend-frontend
   status       String    @default("active") // "active", "completed", "abandoned"
 
   // Learning metrics
@@ -77,6 +140,12 @@ model ChatSession {
   messages  ChatMessage[]
   takeaways SessionTakeaway[]
 
+<<<<<<< HEAD
+=======
+  classId   String?
+  class     Class? @relation(fields: [classId], references:[id])
+
+>>>>>>> origin/backend-frontend
   @@map("chat_sessions")
 }
 
@@ -186,7 +255,11 @@ model AnalyticsRequest {
   status       String    @default("pending") // "pending", "processing", "completed"
   results      Json? // JSON with analytics results 
   created_at   DateTime  @default(now())
+<<<<<<< HEAD
   completed_at DateTime?  
+=======
+  completed_at DateTime?
+>>>>>>> origin/backend-frontend
 
   // Relationships
   teacher Teacher @relation(fields: [teacher_id], references: [id])
@@ -196,7 +269,11 @@ model AnalyticsRequest {
 
 model AgentInteraction {
   id               String   @id @default(cuid())
+<<<<<<< HEAD
   session_id       String? 
+=======
+  session_id       String?
+>>>>>>> origin/backend-frontend
   agent_type       String // "teacher", "student", "guardrail", "aggregation", "takeaway"
   interaction_type String // "message_processing", "analytics_generation", "content_filtering"
   input_data       Json
@@ -206,14 +283,24 @@ model AgentInteraction {
 
   // Performance metrics
   success       Boolean @default(true)
+<<<<<<< HEAD
   error_message String? 
+=======
+  error_message String?
+>>>>>>> origin/backend-frontend
 
   @@map("agent_interactions")
 }
 
+<<<<<<< HEAD
 model Summary{
   id               String @id @default(cuid()) 
   summary          String?
+=======
+model Summary {
+  id      String  @id @default(cuid())
+  summary String?
+>>>>>>> origin/backend-frontend
 
   @@map("summaries")
 }
