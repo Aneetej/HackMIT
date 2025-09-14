@@ -118,7 +118,7 @@ export interface UpdateNoteRequest {
 export const teacherApi = {
   // Create a new class
   createClass: async (teacherId: string, classData: CreateClassRequest): Promise<{ success: boolean; class: ClassData }> => {
-    const response = await api.post(`/api/teacher/${teacherId}/class`, classData);
+    const response = await api.post(`/api/teacher/${teacherId}/classroom`, classData);
     return response.data;
   },
 
@@ -130,37 +130,37 @@ export const teacherApi = {
 
   // Get a single class by ID
   getClass: async (classId: string): Promise<{ success: boolean; class: ClassData }> => {
-    const response = await api.get(`/api/class/${classId}`);
+    const response = await api.get(`/api/classroom/${classId}`);
     return response.data;
   },
 
   // Update class details
   updateClass: async (classId: string, classData: UpdateClassRequest): Promise<{ success: boolean; class: ClassData }> => {
-    const response = await api.put(`/api/class/${classId}`, classData);
+    const response = await api.put(`/api/classroom/${classId}`, classData);
     return response.data;
   },
 
   // Delete a class
   deleteClass: async (classId: string): Promise<{ success: boolean; message: string }> => {
-    const response = await api.delete(`/api/class/${classId}`);
+    const response = await api.delete(`/api/classroom/${classId}`);
     return response.data;
   },
 
   // Get all students for a specific class
   getClassStudents: async (classId: string): Promise<{ success: boolean; students: StudentData[] }> => {
-    const response = await api.get(`/api/class/${classId}/students`);
+    const response = await api.get(`/api/classroom/${classId}/students`);
     return response.data;
   },
 
   // Get message insights for a specific class
   getMessageInsights: async (classId: string): Promise<{ success: boolean; data: MessageInsightsData }> => {
-    const response = await api.get(`/api/class/${classId}/insights/messages`);
+    const response = await api.get(`/api/classroom/${classId}/insights/messages`);
     return response.data;
   },
 
   // Get daily usage for a specific student in a class
   getStudentDailyUsage: async (classId: string, studentId: string): Promise<{ success: boolean; data: StudentDailyUsageData }> => {
-    const response = await api.get(`/api/class/${classId}/student/${studentId}/daily-usage`);
+    const response = await api.get(`/api/classroom/${classId}/student/${studentId}/daily-usage`);
     return response.data;
   },
 
@@ -168,13 +168,13 @@ export const teacherApi = {
   
   // Create a new insight for a class
   createInsight: async (classId: string, insightData: CreateInsightRequest): Promise<{ success: boolean; insight: InsightData }> => {
-    const response = await api.post(`/api/classes/${classId}/insights`, insightData);
+    const response = await api.post(`/api/classrooms/${classId}/insights`, insightData);
     return response.data;
   },
 
   // Get all insights for a class
   getInsights: async (classId: string): Promise<{ success: boolean; insights: InsightData[] }> => {
-    const response = await api.get(`/api/classes/${classId}/insights`);
+    const response = await api.get(`/api/classrooms/${classId}/insights`);
     return response.data;
   },
 
@@ -194,13 +194,13 @@ export const teacherApi = {
   
   // Get note for a student in a class (creates empty note if none exists)
   getNote: async (classId: string, studentId: string): Promise<{ success: boolean; note: NoteData }> => {
-    const response = await api.get(`/api/classes/${classId}/students/${studentId}/note`);
+    const response = await api.get(`/api/classrooms/${classId}/students/${studentId}/note`);
     return response.data;
   },
 
   // Update note for a student in a class
   updateNote: async (classId: string, studentId: string, noteData: UpdateNoteRequest): Promise<{ success: boolean; note: NoteData }> => {
-    const response = await api.put(`/api/classes/${classId}/students/${studentId}/note`, noteData);
+    const response = await api.put(`/api/classrooms/${classId}/students/${studentId}/note`, noteData);
     return response.data;
   }
 };
