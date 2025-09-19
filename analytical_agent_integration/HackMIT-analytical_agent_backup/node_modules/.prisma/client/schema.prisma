@@ -1,0 +1,219 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- enums ---
+enum Role {
+  STUDENT
+  TEACHER
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+// --- models ---
+model Student {
+  id                String   @id @default(cuid())
+  name              String
+  role              Role     @default(STUDENT)
+  email             String   @unique
+  grade             Int
+  subject_focus     String   @default("general_math")
+  learning_style    String   @default("mixed") // "visual", "auditory", "kinesthetic", "mixed"
+  preferred_content String   @default("mixed") // "videos", "text", "interactive", "mixed"
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  // Relationships
+  chat_sessions      ChatSession[]
+  learning_analytics LearningAnalytics[]
+  preferences        StudentPreference[]
+
+  @@map("students")
+}
+
+model Teacher {
+  id         String   @id @default(cuid())
+  name       String
+  role       Role     @default(TEACHER)
+  email      String   @unique
+  subject    String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relationships
+  supervised_students String[] // Array of student IDs they monitor
+  analytics_requests  AnalyticsRequest[]
+
+  @@map("teachers")
+}
+
+model ChatSession {
+  id           String    @id @default(cuid())
+  student_id   String
+  session_type String    @default("tutoring") // "tutoring", "homework_help", "concept_review" "exam_prep"
+  started_at   DateTime  @default(now())
+  ended_at     DateTime?
+  status       String    @default("active") // "active", "completed", "abandoned"
+
+  // Learning metrics
+  questions_asked    Int        @default(0)
+  concepts_covered   String[] // Array of math concepts
+  difficulty_level   Difficulty @default(EASY)
+  success_indicators Json? // JSON object with various success metrics 
+
+  // Relationships
+  student   Student           @relation(fields: [student_id], references: [id])
+  messages  ChatMessage[]
+  takeaways SessionTakeaway[]
+
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id           String   @id @unique @default(cuid())
+  session_id   String
+  sender_type  String // "student", "agent", "system"
+  agent_type   String? // "student_agent", "guardrail_agent", etc. 
+  content      String
+  message_type String   @default("text") // "text", "image", "video_link", "interactive"
+  timestamp    DateTime @default(now())
+
+  // Agent processing metadata
+  processed_by        String[] // Array of agent types that processed this message
+  flagged_content     Boolean  @default(false)
+  learning_indicators Json? // JSON with learning preference indicators 
+
+  // Relationships
+  session ChatSession @relation(fields: [session_id], references: [id])
+
+  @@map("chat_messages")
+}
+
+model StudentPreference {
+  id               String   @id @default(cuid())
+  student_id       String
+  preference_type  String // "content_format", "explanation_style", "difficulty_pace"
+  preference_value String
+  confidence_score Float    @default(0.5) // 0.0 to 1.0
+  last_updated     DateTime @default(now())
+  detection_method String // "explicit", "inferred", "feedback"
+
+  // Relationships
+  student Student @relation(fields: [student_id], references: [id])
+
+  @@map("student_preferences")
+}
+
+model LearningAnalytics {
+  id         String   @id @default(cuid())
+  student_id String
+  date       DateTime @default(now())
+
+  // Engagement metrics
+  session_duration      Int // in minutes
+  questions_per_session Float
+  response_time_avg     Float // average response time in seconds
+
+  // Learning progress
+  concepts_mastered      String[]
+  difficulty_progression String // "improving", "stable", "declining"
+  success_rate           Float // 0.0 to 1.0
+
+  // Behavioral patterns
+  preferred_session_time String? // "morning", "afternoon", "evening" 
+  interaction_patterns   Json? // JSON with detailed interaction data 
+
+  // Relationships
+  student Student @relation(fields: [student_id], references: [id])
+
+  @@map("learning_analytics")
+}
+
+model FrequentlyAskedQuestion {
+  id              String   @id @default(cuid())
+  question_text   String
+  category        String // "algebra", "geometry", "calculus", etc.
+  frequency_count Int      @default(1)
+  first_asked     DateTime @default(now())
+  last_asked      DateTime @default(now())
+
+  // Answer metadata
+  common_answers Json? // JSON array of common agent responses 
+  success_rate   Float? // How often this FAQ leads to understanding 
+
+  // Clustering and similarity
+  similar_questions String[] // Array of similar question IDs
+  keywords          String[]
+
+  @@map("frequently_asked_questions")
+}
+
+model SessionTakeaway {
+  id                String   @id @default(cuid())
+  session_id        String
+  takeaway_type     String // "success_pattern", "learning_breakthrough", "effective_method"
+  summary           String
+  key_concepts      String[]
+  effective_methods Json // JSON with methods that worked well
+  created_at        DateTime @default(now())
+
+  // RAG store metadata
+  embedding_vector Float[] // For vector similarity search  
+  relevance_score  Float? // How relevant this takeaway is for future sessions  
+
+  // Relationships
+  session ChatSession @relation(fields: [session_id], references: [id])
+
+  @@map("session_takeaways")
+}
+
+model AnalyticsRequest {
+  id           String    @id @default(cuid())
+  teacher_id   String
+  request_type String // "individual_student", "class_overview", "faq_analysis"
+  parameters   Json // JSON with request parameters
+  status       String    @default("pending") // "pending", "processing", "completed"
+  results      Json? // JSON with analytics results 
+  created_at   DateTime  @default(now())
+  completed_at DateTime?
+
+  // Relationships
+  teacher Teacher @relation(fields: [teacher_id], references: [id])
+
+  @@map("analytics_requests")
+}
+
+model AgentInteraction {
+  id               String   @id @default(cuid())
+  session_id       String?
+  agent_type       String // "teacher", "student", "guardrail", "aggregation", "takeaway"
+  interaction_type String // "message_processing", "analytics_generation", "content_filtering"
+  input_data       Json
+  output_data      Json
+  processing_time  Float // in milliseconds
+  timestamp        DateTime @default(now())
+
+  // Performance metrics
+  success       Boolean @default(true)
+  error_message String?
+
+  @@map("agent_interactions")
+}
+
+model Summary {
+  id      String  @id @default(cuid())
+  summary String?
+
+  @@map("summaries")
+}
