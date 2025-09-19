@@ -1,0 +1,208 @@
+.nav {
+  background: hsl(var(--background));
+  border-bottom: 1px solid hsl(var(--border));
+  padding: var(--spacing-3) var(--spacing-4);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+}
+
+.logo {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: hsl(var(--primary));
+}
+
+.navItems {
+  display: none;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+@media (min-width: 768px) {
+  .navItems {
+    display: flex;
+  }
+}
+
+.navItem {
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  transition: all 0.15s ease-in-out;
+  color: hsl(var(--muted-foreground));
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.navItem:hover {
+  color: hsl(var(--foreground));
+  background: hsl(var(--accent));
+}
+
+.navItemActive {
+  background: hsl(var(--accent));
+  color: hsl(var(--primary));
+  border-bottom: 2px solid hsl(var(--primary));
+}
+
+.profile {
+  position: relative;
+}
+
+.profileButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2);
+  border-radius: var(--radius-lg);
+  background: transparent;
+  border: none;
+  transition: all 0.15s ease-in-out;
+}
+
+.profileButton:hover {
+  background: hsl(var(--accent));
+}
+
+.avatar {
+  width: 2rem;
+  height: 2rem;
+  background: hsl(var(--primary));
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: hsl(var(--primary-foreground));
+  font-weight: var(--font-weight-medium);
+}
+
+.avatarImage {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-full);
+}
+
+.userInfo {
+  display: none;
+  text-align: left;
+}
+
+@media (min-width: 768px) {
+  .userInfo {
+    display: block;
+  }
+}
+
+.userName {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: hsl(var(--foreground));
+}
+
+.userRole {
+  font-size: var(--font-size-xs);
+  color: hsl(var(--muted-foreground));
+  text-transform: capitalize;
+}
+
+.chevron {
+  width: 1rem;
+  height: 1rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.dropdown {
+  position: absolute;
+  right: 0;
+  margin-top: var(--spacing-2);
+  width: 12rem;
+  background: hsl(var(--popover));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-1);
+  z-index: 50;
+  border: 1px solid hsl(var(--border));
+}
+
+.dropdownItem {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-4);
+  font-size: var(--font-size-sm);
+  color: hsl(var(--popover-foreground));
+  text-align: left;
+  background: transparent;
+  border: none;
+  transition: all 0.15s ease-in-out;
+}
+
+.dropdownItem:hover {
+  background: hsl(var(--accent));
+}
+
+.dropdownSeparator {
+  margin: var(--spacing-1) 0;
+  border: none;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.mobileNav {
+  display: block;
+  margin-top: var(--spacing-3);
+  border-top: 1px solid hsl(var(--border));
+  padding-top: var(--spacing-3);
+}
+
+@media (min-width: 768px) {
+  .mobileNav {
+    display: none;
+  }
+}
+
+.mobileNavItems {
+  display: flex;
+  gap: var(--spacing-1);
+  overflow-x: auto;
+}
+
+.mobileNavItem {
+  flex-shrink: 0;
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  transition: all 0.15s ease-in-out;
+  color: hsl(var(--muted-foreground));
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.mobileNavItem:hover {
+  color: hsl(var(--foreground));
+  background: hsl(var(--accent));
+}
+
+.mobileNavItemActive {
+  background: hsl(var(--accent));
+  color: hsl(var(--primary));
+}

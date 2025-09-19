@@ -1,0 +1,259 @@
+.container {
+  min-height: 100vh;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.header {
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  padding: var(--spacing-4) var(--spacing-6);
+}
+
+.headerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+  text-decoration: underline;
+}
+
+.backButton:hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.navigation {
+  display: flex;
+  gap: var(--spacing-1);
+}
+
+.navTab {
+  padding: var(--spacing-2) var(--spacing-4);
+  background: none;
+  border: none;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+
+.navTab:hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.navTabActive {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.navTabActive:hover {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.classCode {
+  padding: var(--spacing-2) var(--spacing-4);
+  background: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+  font-family: monospace;
+}
+
+.main {
+  padding: var(--spacing-6);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.studentHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-6);
+}
+
+.backToStudentsButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  background: none;
+  border: none;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+  align-self: flex-start;
+}
+
+.backToStudentsButton:hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.backIcon {
+  width: 16px;
+  height: 16px;
+}
+
+.studentName {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+  margin: 0;
+}
+
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: var(--spacing-6);
+}
+
+.notesSection {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.areasSection {
+  grid-column: 2;
+  grid-row: 1 / 3;
+}
+
+.chartSection {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+  margin: 0 0 var(--spacing-3) 0;
+}
+
+.notesTextarea {
+  width: 100%;
+  height: 200px;
+  padding: var(--spacing-3);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: inherit;
+  font-size: 0.875rem;
+  resize: vertical;
+}
+
+.notesTextarea:focus {
+  outline: none;
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+}
+
+.areasInputs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: var(--spacing-2);
+}
+
+.areaInput {
+  width: 100%;
+  padding: var(--spacing-3);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.areaInput:focus {
+  outline: none;
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+}
+
+.chartContainer {
+  width: 100%;
+  height: 200px;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  background: hsl(var(--card));
+  padding: var(--spacing-4);
+  position: relative;
+  z-index: 1;
+  min-height: 200px;
+}
+
+.chart {
+  width: 100%;
+  height: 100%;
+}
+
+.usageStats {
+  display: flex;
+  gap: var(--spacing-4);
+  margin-bottom: var(--spacing-4);
+  padding: var(--spacing-3);
+  background: hsl(var(--muted) / 0.5);
+  border-radius: var(--radius);
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+}
+
+.statValue {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.loadingState,
+.errorState,
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  background: hsl(var(--card));
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem;
+}
+
+.errorState {
+  color: hsl(var(--destructive));
+}

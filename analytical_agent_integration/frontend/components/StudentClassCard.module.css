@@ -1,0 +1,60 @@
+.classCard {
+  padding: var(--spacing-4);
+  border: 2px solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  background: hsl(var(--card));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: var(--spacing-3);
+  position: relative;
+}
+
+
+.classCard:hover {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--muted));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.classCardSelected {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--accent));
+  box-shadow: 0 0 0 2px hsl(var(--primary));
+  transform: translateY(-1px);
+}
+
+.classHeader {
+  margin-bottom: var(--spacing-3);
+}
+
+.className {
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  font-size: 0.9rem;
+}
+
+.classImage {
+  padding: var(--spacing-6) var(--spacing-4);
+  background: hsl(var(--muted));
+  border-radius: var(--radius-sm);
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8rem;
+  margin-bottom: var(--spacing-3);
+}
+
+.getHelpButton {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border: none;
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.getHelpButton:hover {
+  background: hsl(var(--primary) / 0.9);
+}

@@ -1,0 +1,226 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id                 String              @id @default(cuid())
+  name               String
+  role               Role                @default(STUDENT)
+  email              String              @unique
+  grade              Int
+  subject_focus      String              @default("general_math")
+  learning_style     String              @default("mixed")
+  preferred_content  String              @default("mixed")
+  created_at         DateTime            @default(now())
+  updated_at         DateTime            @updatedAt
+  chat_sessions      ChatSession[]
+  learning_analytics LearningAnalytics[]
+  notes              Note[]
+  preferences        StudentPreference[]
+  classes            Class[]             @relation("ClassStudents")
+
+  @@map("students")
+}
+
+model Note {
+  id        String  @id @default(cuid())
+  content   String
+  classId   String
+  studentId String
+  class     Class   @relation(fields: [classId], references: [id])
+  student   Student @relation(fields: [studentId], references: [id])
+
+  @@map("notes")
+}
+
+model Class {
+  id             String        @id @db.Char(6)
+  name           String
+  restrictions   String?
+  teachingStyle  String?
+  teacherId      String?
+  otherNotes     String?
+  studentGrade   String?
+  subject        String?
+  customInsights String[]
+  chatSessions   ChatSession[]
+  teacher        Teacher?      @relation(fields: [teacherId], references: [id])
+  insights       Insight[]
+  notes          Note[]
+  students       Student[]     @relation("ClassStudents")
+
+  @@map("classes")
+}
+
+model Insight {
+  id          String @id @default(cuid())
+  title       String
+  description String
+  classId     String
+  class       Class  @relation(fields: [classId], references: [id])
+
+  @@map("insights")
+}
+
+model Teacher {
+  id                  String             @id @default(cuid())
+  name                String
+  role                Role               @default(TEACHER)
+  email               String             @unique
+  subject             String
+  created_at          DateTime           @default(now())
+  updated_at          DateTime           @updatedAt
+  supervised_students String[]
+  analytics_requests  AnalyticsRequest[]
+  classes             Class[]
+
+  @@map("teachers")
+}
+
+model ChatSession {
+  id                 String            @id @default(cuid())
+  student_id         String
+  session_type       String            @default("tutoring")
+  started_at         DateTime          @default(now())
+  ended_at           DateTime?
+  status             String            @default("active")
+  questions_asked    Int               @default(0)
+  concepts_covered   String[]
+  difficulty_level   Difficulty        @default(EASY)
+  success_indicators Json?
+  classId            String?
+  messages           ChatMessage[]
+  class              Class?            @relation(fields: [classId], references: [id])
+  student            Student           @relation(fields: [student_id], references: [id])
+  takeaways          SessionTakeaway[]
+
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id                  String      @id @unique @default(cuid())
+  session_id          String
+  sender_type         String
+  agent_type          String?
+  content             String
+  message_type        String      @default("text")
+  timestamp           DateTime    @default(now())
+  processed_by        String[]
+  flagged_content     Boolean     @default(false)
+  learning_indicators Json?
+  session             ChatSession @relation(fields: [session_id], references: [id])
+
+  @@map("chat_messages")
+}
+
+model StudentPreference {
+  id               String   @id @default(cuid())
+  student_id       String
+  preference_type  String
+  preference_value String
+  confidence_score Float    @default(0.5)
+  last_updated     DateTime @default(now())
+  detection_method String
+  student          Student  @relation(fields: [student_id], references: [id])
+
+  @@map("student_preferences")
+}
+
+model LearningAnalytics {
+  id                     String   @id @default(cuid())
+  student_id             String
+  date                   DateTime @default(now())
+  session_duration       Int
+  questions_per_session  Float
+  response_time_avg      Float
+  concepts_mastered      String[]
+  difficulty_progression String
+  success_rate           Float
+  preferred_session_time String?
+  interaction_patterns   Json?
+  student                Student  @relation(fields: [student_id], references: [id])
+
+  @@map("learning_analytics")
+}
+
+model FrequentlyAskedQuestion {
+  id                String   @id @default(cuid())
+  question_text     String
+  category          String
+  frequency_count   Int      @default(1)
+  first_asked       DateTime @default(now())
+  last_asked        DateTime @default(now())
+  common_answers    Json?
+  success_rate      Float?
+  similar_questions String[]
+  keywords          String[]
+
+  @@map("frequently_asked_questions")
+}
+
+model SessionTakeaway {
+  id                String      @id @default(cuid())
+  session_id        String
+  takeaway_type     String
+  summary           String
+  key_concepts      String[]
+  effective_methods Json
+  created_at        DateTime    @default(now())
+  embedding_vector  Float[]
+  relevance_score   Float?
+  session           ChatSession @relation(fields: [session_id], references: [id])
+
+  @@map("session_takeaways")
+}
+
+model AnalyticsRequest {
+  id           String    @id @default(cuid())
+  teacher_id   String
+  request_type String
+  parameters   Json
+  status       String    @default("pending")
+  results      Json?
+  created_at   DateTime  @default(now())
+  completed_at DateTime?
+  teacher      Teacher   @relation(fields: [teacher_id], references: [id])
+
+  @@map("analytics_requests")
+}
+
+model AgentInteraction {
+  id               String   @id @default(cuid())
+  session_id       String?
+  agent_type       String
+  interaction_type String
+  input_data       Json
+  output_data      Json
+  processing_time  Float
+  timestamp        DateTime @default(now())
+  success          Boolean  @default(true)
+  error_message    String?
+
+  @@map("agent_interactions")
+}
+
+model Summary {
+  id      String  @id @default(cuid())
+  summary String?
+
+  @@map("summaries")
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
